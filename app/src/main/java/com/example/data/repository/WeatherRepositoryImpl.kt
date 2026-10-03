@@ -71,7 +71,7 @@ class WeatherRepositoryImpl(
             weatherDao.insertWeather(
                 WeatherCacheEntity(
                     locationKey = key,
-                    cityName = cityName,
+                    cityName = remoteData.location.name.ifBlank { cityName },
                     latitude = lat,
                     longitude = lon,
                     jsonPayload = jsonStr,

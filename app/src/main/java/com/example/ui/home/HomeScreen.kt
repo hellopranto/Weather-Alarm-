@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
@@ -107,6 +108,7 @@ fun HomeScreen(
                         tempUnit = TemperatureUnit.CELSIUS,
                         onOpenPicker = { isPickerOpen = true },
                         onUseGps = { viewModel.useGps() },
+                        onRefresh = { viewModel.loadWeather(forceRefresh = true) },
                         onNavigateToAlerts = onNavigateToAlerts
                     )
                 } else {
@@ -124,6 +126,7 @@ fun HomeScreen(
                     windUnit = state.userPreferences.windUnit,
                     onOpenPicker = { isPickerOpen = true },
                     onUseGps = { viewModel.useGps() },
+                    onRefresh = { viewModel.loadWeather(forceRefresh = true) },
                     onNavigateToAlerts = onNavigateToAlerts
                 )
             }
@@ -139,6 +142,7 @@ fun HomeContent(
     windUnit: com.example.data.local.WindUnit = com.example.data.local.WindUnit.KMH,
     onOpenPicker: () -> Unit,
     onUseGps: () -> Unit,
+    onRefresh: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -160,25 +164,35 @@ fun HomeContent(
             ) {
                 Row(
                     modifier = Modifier
+                        .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { onOpenPicker() }
-                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                        .padding(vertical = 4.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Column {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = weather.location.name,
+                                text = weather.location.name.ifBlank { "Bangladesh" },
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
+                                color = MaterialTheme.colorScheme.onBackground,
+                                maxLines = 1
                             )
                             Icon(
                                 imageVector = Icons.Default.ArrowDropDown,
@@ -186,15 +200,37 @@ fun HomeContent(
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
                         }
-                        Text(
-                            text = "${weather.location.country} • Bangladesh",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            val displayTime = formatLastUpdateTime(weather.updatedAt)
+                            Text(
+                                text = stringResource(R.string.last_updated, displayTime),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    IconButton(
+                        onClick = onRefresh,
+                        modifier = Modifier.testTag("btn_refresh_top")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = stringResource(R.string.pull_to_refresh),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     IconButton(
                         onClick = onUseGps,
                         modifier = Modifier.testTag("btn_gps_location")
@@ -449,5 +485,23 @@ fun formatTemp(celsius: Double, unit: TemperatureUnit): String {
     return when (unit) {
         TemperatureUnit.CELSIUS -> "%.0f°C".format(celsius)
         TemperatureUnit.FAHRENHEIT -> "%.0f°F".format(celsius * 9 / 5 + 32)
+    }
+}
+
+fun formatLastUpdateTime(isoOrDate: String): String {
+    if (isoOrDate.isBlank()) return "Just now"
+    return try {
+        val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+            timeZone = java.util.TimeZone.getTimeZone("UTC")
+        }
+        val date = iso.parse(isoOrDate)
+        if (date != null) {
+            val display = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+            display.format(date)
+        } else {
+            isoOrDate.take(16).replace("T", " ")
+        }
+    } catch (_: Exception) {
+        if (isoOrDate.contains(":")) isoOrDate.take(16).replace("T", " ") else "Just now"
     }
 }

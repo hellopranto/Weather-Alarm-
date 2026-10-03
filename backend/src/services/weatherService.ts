@@ -90,7 +90,8 @@ export class WeatherService {
       return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     };
 
-    const locationName = cityName || (owCurrent ? owCurrent.name : 'Bangladesh');
+    const openWeatherLocName = owCurrent?.name && owCurrent.name.trim().length > 0 ? owCurrent.name.trim() : null;
+    const locationName = openWeatherLocName || (cityName && cityName !== 'My Location' ? cityName : 'Bangladesh');
 
     // Parse Hourly
     const hourly: any[] = [];

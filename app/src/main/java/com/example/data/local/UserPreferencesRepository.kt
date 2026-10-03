@@ -110,12 +110,12 @@ class UserPreferencesRepository(private val context: Context) {
         context.dataStore.edit { it[prefUseGps] = useGps }
     }
 
-    suspend fun setSelectedLocation(name: String, lat: Double, lon: Double) {
+    suspend fun setSelectedLocation(name: String, lat: Double, lon: Double, useGps: Boolean = false) {
         context.dataStore.edit {
             it[prefCityName] = name
             it[prefLatitude] = lat
             it[prefLongitude] = lon
-            it[prefUseGps] = false
+            it[prefUseGps] = useGps
         }
     }
 }

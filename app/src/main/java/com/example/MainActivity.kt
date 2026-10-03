@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -18,8 +19,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
@@ -37,6 +41,7 @@ import com.example.ui.hourly.HourlyViewModel
 import com.example.ui.radar.RadarViewModel
 import com.example.ui.settings.SettingsViewModel
 import com.example.ui.theme.MyApplicationTheme
+import com.example.worker.WeatherSyncManager
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -54,6 +59,9 @@ class MainActivity : ComponentActivity() {
         val bmdRepo = BmdWeatherRepositoryImpl(ApiClient.bmdApi)
         val radarRepo = RadarRepositoryImpl(ApiClient.radarApi)
 
+        // Ensure background periodic sync is active
+        WeatherSyncManager.schedulePeriodicSync(applicationContext)
+
         setContent {
             val userPrefs by preferencesRepo.userPreferencesFlow.collectAsStateWithLifecycle(
                 initialValue = com.example.data.local.UserPreferences()
@@ -62,7 +70,10 @@ class MainActivity : ComponentActivity() {
             // Localized Context provider for Bengali / English dynamic switching
             val localizedContext = rememberLocalizedContext(LocalContext.current, userPrefs.language)
 
-            CompositionLocalProvider(LocalContext provides localizedContext) {
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalActivityResultRegistryOwner provides this@MainActivity
+            ) {
                 MyApplicationTheme(themeMode = userPrefs.themeMode) {
                     val navController = rememberNavController()
 
@@ -111,7 +122,7 @@ class MainActivity : ComponentActivity() {
                         }
                     )
 
-                    // Permission launcher for location
+                    // Permission launcher for location and background notifications
                     val permissionLauncher = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.RequestMultiplePermissions()
                     ) { permissions ->
@@ -122,14 +133,37 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                    // On app launch: check location permission and refresh dynamic location data
                     LaunchedEffect(Unit) {
-                        if (userPrefs.useGpsLocation && !locationTracker.hasLocationPermission()) {
-                            permissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                            )
+                        val neededPermissions = mutableListOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            neededPermissions.add(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+
+                        if (!locationTracker.hasLocationPermission()) {
+                            permissionLauncher.launch(neededPermissions.toTypedArray())
+                        } else {
+                            homeViewModel.checkLocationAndUpdate(forceRefresh = true)
+                        }
+                    }
+
+                    // Lifecycle observer: Whenever user opens or switches back to the app,
+                    // check current location and update weather data immediately
+                    val lifecycleOwner = LocalLifecycleOwner.current
+                    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                if (locationTracker.hasLocationPermission()) {
+                                    homeViewModel.checkLocationAndUpdate(forceRefresh = true)
+                                }
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
                         }
                     }
 
@@ -151,7 +185,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun rememberLocalizedContext(baseContext: Context, languageCode: String): Context {
-    val locale = Locale(languageCode)
+    val locale = Locale.forLanguageTag(languageCode)
     Locale.setDefault(locale)
     val config = Configuration(baseContext.resources.configuration)
     config.setLocale(locale)

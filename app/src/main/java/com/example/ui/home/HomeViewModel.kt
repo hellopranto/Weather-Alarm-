@@ -41,10 +41,15 @@ class HomeViewModel(
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     init {
-        loadWeather()
+        // Every time the ViewModel is initialized on app open, check location and fetch fresh data
+        checkLocationAndUpdate(forceRefresh = true)
     }
 
-    fun loadWeather(forceRefresh: Boolean = false) {
+    /**
+     * Checks current GPS device location if permission is granted, updates coordinates,
+     * and fetches fresh weather and dynamic location address from OpenWeatherMap & BMD.
+     */
+    fun checkLocationAndUpdate(forceRefresh: Boolean = true) {
         viewModelScope.launch {
             if (forceRefresh) _isRefreshing.value = true
 
@@ -53,12 +58,15 @@ class HomeViewModel(
             var targetLon = prefs.selectedLongitude
             var targetCity = prefs.selectedCityName
 
-            if (prefs.useGpsLocation && locationTracker.hasLocationPermission()) {
+            // Check location permission on every open
+            if (locationTracker.hasLocationPermission()) {
                 val loc = locationTracker.getCurrentLocation()
                 if (loc != null) {
                     targetLat = loc.latitude
                     targetLon = loc.longitude
-                    targetCity = "My Location"
+                    // Empty city name instructs backend and OpenWeather to reverse-geocode
+                    // and return the exact dynamic locality/neighborhood/district name
+                    targetCity = ""
                 }
             }
 
@@ -76,6 +84,16 @@ class HomeViewModel(
                             userPreferences = prefs
                         )
                         _isRefreshing.value = false
+
+                        // Automatically persist dynamic location name obtained from OpenWeather
+                        if (resource.data.location.name.isNotBlank()) {
+                            preferencesRepository.setSelectedLocation(
+                                name = resource.data.location.name,
+                                lat = targetLat,
+                                lon = targetLon,
+                                useGps = prefs.useGpsLocation
+                            )
+                        }
                     }
                     is Resource.Error -> {
                         val cached = weatherRepository.getCachedWeather(targetLat, targetLon)
@@ -90,17 +108,22 @@ class HomeViewModel(
         }
     }
 
+    fun loadWeather(forceRefresh: Boolean = false) {
+        checkLocationAndUpdate(forceRefresh)
+    }
+
     fun selectCity(city: BangladeshCity) {
         viewModelScope.launch {
+            preferencesRepository.setUseGpsLocation(false)
             preferencesRepository.setSelectedLocation(city.nameEn, city.latitude, city.longitude)
-            loadWeather(forceRefresh = true)
+            checkLocationAndUpdate(forceRefresh = true)
         }
     }
 
     fun useGps() {
         viewModelScope.launch {
             preferencesRepository.setUseGpsLocation(true)
-            loadWeather(forceRefresh = true)
+            checkLocationAndUpdate(forceRefresh = true)
         }
     }
 }
