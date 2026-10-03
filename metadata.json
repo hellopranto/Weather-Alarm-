@@ -1,0 +1,6 @@
+{
+  "name": "Weather Alert Bangladesh",
+  "description": "Live weather, BMD observations, RainViewer precipitation radar, and severe weather alerts for Bangladesh with Bengali language support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

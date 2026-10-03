@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">Weather Alert Bangladesh</string>
+    <string name="nav_home">হোম</string>
+    <string name="nav_hourly">ঘণ্টাভিত্তিক</string>
+    <string name="nav_radar">লাইভ রাডার</string>
+    <string name="nav_alerts">সতর্কতা</string>
+    <string name="nav_settings">সেটিংস</string>
+
+    <string name="current_weather">বর্তমান আবহাওয়া</string>
+    <string name="hourly_forecast">ঘণ্টাভিত্তিক পূর্বাভাস</string>
+    <string name="daily_forecast">৭ দিনের পূর্বাভাস</string>
+    <string name="bmd_section_title">বাংলাদেশ আবহাওয়া অধিদপ্তর (BMD)</string>
+    <string name="bmd_station_label">বিএমডি স্টেশন</string>
+    <string name="bmd_rainfall_label">২৪ ঘণ্টার বৃষ্টিপাত</string>
+    <string name="bmd_synoptic_title">সিনপটিক আবহাওয়া বুলেটিন</string>
+    <string name="bmd_online">বিএমডি সিঙ্কড</string>
+    <string name="bmd_fallback">বিএমডি বিকল্প ডেটা</string>
+
+    <string name="feels_like">অনুভূত তাপমাত্রা %1$s</string>
+    <string name="humidity">আর্দ্রতা</string>
+    <string name="wind">বাতাস</string>
+    <string name="wind_direction">দিক</string>
+    <string name="pressure">বায়ুচাপ</string>
+    <string name="visibility">দৃশ্যমানতা</string>
+    <string name="sunrise">সূর্যোদয়</string>
+    <string name="sunset">সূর্যাস্ত</string>
+    <string name="rain_probability">বৃষ্টির সম্ভাবনা</string>
+    <string name="precipitation">বৃষ্টিপাত</string>
+    <string name="uv_index">ইউভি ইনডেক্স</string>
+    <string name="air_quality">বাতাসের মান</string>
+
+    <string name="last_updated">সর্বশেষ তথ্য: %1$s</string>
+    <string name="offline_cached">অফলাইন - সংরক্ষিত তথ্য</string>
+    <string name="pull_to_refresh">রিফ্রেশ করতে টানুন</string>
+    <string name="search_hint">বাংলাদেশ জেলা বা শহর খুঁজুন…</string>
+    <string name="search_title">অবস্থান নির্বাচন করুন</string>
+    <string name="popular_cities">প্রধান বিভাগসমূহ</string>
+
+    <string name="radar_title">লাইভ বৃষ্টি রাডার</string>
+    <string name="radar_source_rainviewer">রেনভিউয়ার ডপলার ওভারলে</string>
+    <string name="radar_play">চালান</string>
+    <string name="radar_pause">থামান</string>
+    <string name="radar_step_back">পেছনে</string>
+    <string name="radar_step_forward">সামনে</string>
+    <string name="radar_latest">সর্বশেষ ফ্রেম</string>
+    <string name="radar_legend_title">বৃষ্টিপাতের তীব্রতা</string>
+    <string name="radar_light">হালকা</string>
+    <string name="radar_moderate">মাঝারি</string>
+    <string name="radar_heavy">ভারী</string>
+    <string name="radar_extreme">তীব্র / ঝড়</string>
+    <string name="radar_unavailable">রাডার তথ্য সাময়িকভাবে পাওয়া যাচ্ছে না।</string>
+
+    <string name="alerts_title">আবহাওয়া সতর্কতা</string>
+    <string name="alerts_active_count">%1$d টি সক্রিয় সতর্কতা</string>
+    <string name="no_active_alerts">এই অঞ্চলের জন্য কোনো সক্রিয় আবহাওয়া সতর্কতা নেই</string>
+    <string name="no_active_alerts_desc">আবহাওয়া শান্ত রয়েছে। বাংলাদেশ আবহাওয়া অধিদপ্তর ও আন্তর্জাতিক কেন্দ্রসমূহ স্বাভাবিক পরিস্থিতি নিশ্চিত করেছে।</string>
+    <string name="alert_source_prefix">প্রদানকারী: %1$s</string>
+    <string name="alert_effective">কার্যকর: %1$s</string>
+    <string name="alert_expires">মেয়াদ শেষ: %1$s</string>
+
+    <string name="settings_title">সেটিংস</string>
+    <string name="settings_preferences">পছন্দসমূহ</string>
+    <string name="settings_language">ভাষা (Language)</string>
+    <string name="lang_english">English (ইংরেজি)</string>
+    <string name="lang_bengali">বাংলা (Bengali)</string>
+    <string name="temp_unit">তাপমাত্রার একক</string>
+    <string name="unit_celsius">সেলসিয়াস (°C)</string>
+    <string name="unit_fahrenheit">ফারেনহাইট (°F)</string>
+    <string name="wind_unit">বাতাসের গতির একক</string>
+    <string name="unit_kmh">কিমি/ঘণ্টা</string>
+    <string name="unit_ms">মি/সে</string>
+    <string name="unit_mph">মাইল/ঘণ্টা</string>
+    <string name="theme_mode">থিম মোড</string>
+    <string name="theme_system">সিস্টেম ডিফল্ট</string>
+    <string name="theme_light">লাইট মোড</string>
+    <string name="theme_dark">ডার্ক মোড</string>
+    <string name="settings_location">অবস্থান পরিষেবা</string>
+    <string name="use_gps">স্বয়ংক্রিয় জিপিএস অবস্থান</string>
+    <string name="gps_desc">আপনার সরাসরি স্থানাঙ্কের জন্য আবহাওয়ার তথ্য নিন</string>
+    <string name="permission_rationale">আপনার জেলায় সঠিক সতর্কতা ও লাইভ রাডার দেখাতে অবস্থানের অনুমতি প্রয়োজন।</string>
+    <string name="grant_permission">অনুমতি দিন</string>
+    <string name="settings_data_sources">ডেটা উৎসসমূহ</string>
+    <string name="data_sources_desc">ওপেনওয়েদার (মূল পূর্বাভাস), বাংলাদেশ আবহাওয়া অধিদপ্তর (বিএমডি স্টেশন তথ্য ও ঘূর্ণিঝড় সংকেত), রেনভিউয়ার (ডপলার রাডার মানচিত্র)।</string>
+    <string name="settings_about">ওয়েদার অ্যালার্ট বাংলাদেশ সম্পর্কে</string>
+    <string name="about_desc">জেটপ্যাক কম্পোজ ও এমভিভিএম আর্কিটেকচারে তৈরি দেশীয় অ্যান্ড্রয়েড অ্যাপ্লিকেশন। বাংলাদেশের মৌসুমি বায়ু, কালবৈশাখী ও সামুদ্রিক ঘূর্ণিঝড়ের জন্য বিশেষভাবে অপ্টিমাইজড।</string>
+    <string name="backend_proxy_title">ব্যাকএন্ড প্রক্সি লেয়ার</string>
+    <string name="backend_proxy_desc">নিরাপদ ব্যাকএন্ড প্রক্সির মাধ্যমে এপিআই কী সুরক্ষিত রাখা হয়েছে এবং বিএমডি পর্যবেক্ষণ ক্যাশ করা হয়।</string>
+
+    <string name="error_generic">আবহাওয়া তথ্য সাময়িকভাবে পাওয়া যাচ্ছে না।</string>
+    <string name="error_network">ইন্টারনেট সংযোগ পরীক্ষা করুন।</string>
+    <string name="btn_retry">পুনরায় চেষ্টা করুন</string>
+    <string name="btn_close">বন্ধ করুন</string>
+</resources>
