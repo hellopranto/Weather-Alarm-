@@ -34,10 +34,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,6 +69,7 @@ import com.example.ui.components.OfflineStatusBanner
 import com.example.ui.components.WeatherConditionIcon
 import com.example.ui.components.WeatherMetricsGrid
 import com.example.ui.theme.WeatherAlertWarning
+import com.example.util.TimeUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +80,17 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val isGpsLocating by viewModel.isGpsLocating.collectAsStateWithLifecycle()
+    val locationMessage by viewModel.locationMessage.collectAsStateWithLifecycle()
     var isPickerOpen by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(locationMessage) {
+        locationMessage?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.dismissLocationMessage()
+        }
+    }
 
     BangladeshDistrictPickerSheet(
         isOpen = isPickerOpen,
@@ -84,51 +100,61 @@ fun HomeScreen(
         }
     )
 
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = { viewModel.loadWeather(forceRefresh = true) },
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("home_pull_refresh")
-    ) {
-        when (val state = uiState) {
-            is WeatherUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.testTag("home_loading"))
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = modifier.fillMaxSize()
+    ) { innerPadding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.loadWeather(forceRefresh = true) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .testTag("home_pull_refresh")
+        ) {
+            when (val state = uiState) {
+                is WeatherUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.testTag("home_loading"))
+                    }
                 }
-            }
-            is WeatherUiState.Error -> {
-                if (state.cachedData != null) {
+                is WeatherUiState.Error -> {
+                    if (state.cachedData != null) {
+                        HomeContent(
+                            weather = state.cachedData,
+                            isOffline = true,
+                            tempUnit = TemperatureUnit.CELSIUS,
+                            isRefreshing = isRefreshing,
+                            isGpsLocating = isGpsLocating,
+                            onOpenPicker = { isPickerOpen = true },
+                            onUseGps = { viewModel.useGps() },
+                            onRefresh = { viewModel.loadWeather(forceRefresh = true) },
+                            onNavigateToAlerts = onNavigateToAlerts
+                        )
+                    } else {
+                        ErrorStateView(
+                            message = state.message.ifBlank { stringResource(R.string.error_generic) },
+                            onRetry = { viewModel.loadWeather(forceRefresh = true) }
+                        )
+                    }
+                }
+                is WeatherUiState.Success -> {
                     HomeContent(
-                        weather = state.cachedData,
-                        isOffline = true,
-                        tempUnit = TemperatureUnit.CELSIUS,
+                        weather = state.data,
+                        isOffline = state.isOfflineCached,
+                        tempUnit = state.userPreferences.temperatureUnit,
+                        windUnit = state.userPreferences.windUnit,
+                        isRefreshing = isRefreshing,
+                        isGpsLocating = isGpsLocating,
                         onOpenPicker = { isPickerOpen = true },
                         onUseGps = { viewModel.useGps() },
                         onRefresh = { viewModel.loadWeather(forceRefresh = true) },
                         onNavigateToAlerts = onNavigateToAlerts
                     )
-                } else {
-                    ErrorStateView(
-                        message = state.message.ifBlank { stringResource(R.string.error_generic) },
-                        onRetry = { viewModel.loadWeather(forceRefresh = true) }
-                    )
                 }
-            }
-            is WeatherUiState.Success -> {
-                HomeContent(
-                    weather = state.data,
-                    isOffline = state.isOfflineCached,
-                    tempUnit = state.userPreferences.temperatureUnit,
-                    windUnit = state.userPreferences.windUnit,
-                    onOpenPicker = { isPickerOpen = true },
-                    onUseGps = { viewModel.useGps() },
-                    onRefresh = { viewModel.loadWeather(forceRefresh = true) },
-                    onNavigateToAlerts = onNavigateToAlerts
-                )
             }
         }
     }
@@ -140,12 +166,36 @@ fun HomeContent(
     isOffline: Boolean,
     tempUnit: TemperatureUnit,
     windUnit: com.example.data.local.WindUnit = com.example.data.local.WindUnit.KMH,
+    isRefreshing: Boolean = false,
+    isGpsLocating: Boolean = false,
     onOpenPicker: () -> Unit,
     onUseGps: () -> Unit,
     onRefresh: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val areaTitle = remember(weather.location) {
+        val village = weather.location.village?.trim().orEmpty()
+        val name = weather.location.name.trim()
+        if (village.isNotBlank()) village else if (name.isNotBlank()) name else "Bangladesh"
+    }
+
+    val adminHierarchy = remember(weather.location) {
+        val parts = mutableListOf<String>()
+        val upazila = weather.location.upazila?.trim().orEmpty()
+        val district = weather.location.district?.trim().orEmpty()
+        val division = weather.location.division?.trim().orEmpty()
+
+        if (upazila.isNotBlank()) parts.add(upazila)
+        if (district.isNotBlank() && !district.equals(upazila, ignoreCase = true) && !district.contains(upazila, ignoreCase = true)) {
+            parts.add(district)
+        }
+        if (division.isNotBlank() && !division.equals(district, ignoreCase = true)) {
+            parts.add(division)
+        }
+        if (parts.isNotEmpty()) parts.joinToString(" • ") else weather.location.country
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -172,7 +222,7 @@ fun HomeContent(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(42.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
@@ -181,23 +231,34 @@ fun HomeContent(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = weather.location.name.ifBlank { "Bangladesh" },
+                                text = areaTitle,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Icon(
                                 imageVector = Icons.Default.ArrowDropDown,
                                 contentDescription = "Change location",
                                 tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                        if (adminHierarchy.isNotBlank()) {
+                            Text(
+                                text = adminHierarchy,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                         Row(
@@ -207,7 +268,7 @@ fun HomeContent(
                             Icon(
                                 imageVector = Icons.Default.Schedule,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.outline,
                                 modifier = Modifier.size(12.dp)
                             )
                             val displayTime = formatLastUpdateTime(weather.updatedAt)
@@ -220,26 +281,44 @@ fun HomeContent(
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = onRefresh,
+                        enabled = !isRefreshing,
                         modifier = Modifier.testTag("btn_refresh_top")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = stringResource(R.string.pull_to_refresh),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        if (isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = stringResource(R.string.pull_to_refresh),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                     IconButton(
                         onClick = onUseGps,
+                        enabled = !isGpsLocating,
                         modifier = Modifier.testTag("btn_gps_location")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.MyLocation,
-                            contentDescription = stringResource(R.string.use_gps),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        if (isGpsLocating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = stringResource(R.string.use_gps),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                     IconButton(
                         onClick = onOpenPicker,
@@ -248,7 +327,7 @@ fun HomeContent(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = stringResource(R.string.search_title),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -422,8 +501,8 @@ fun HomeContent(
                 windDirectionDegrees = weather.current.windDirection,
                 pressureHpa = weather.current.pressure,
                 visibilityMeters = weather.current.visibility,
-                sunrise = weather.current.sunrise,
-                sunset = weather.current.sunset,
+                sunrise = TimeUtils.formatBangladeshSunTime(weather.current.sunrise),
+                sunset = TimeUtils.formatBangladeshSunTime(weather.current.sunset),
                 rainProbability = weather.current.rainProbability,
                 precipitationMm = weather.current.precipitationMm,
                 windUnit = windUnit
@@ -453,8 +532,11 @@ fun HourlyItemCard(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val displayHour = remember(item.timestamp, item.timeString) {
+                TimeUtils.formatBangladeshHour(item.timestamp, item.timeString)
+            }
             Text(
-                text = item.timeString,
+                text = displayHour,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -489,19 +571,5 @@ fun formatTemp(celsius: Double, unit: TemperatureUnit): String {
 }
 
 fun formatLastUpdateTime(isoOrDate: String): String {
-    if (isoOrDate.isBlank()) return "Just now"
-    return try {
-        val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
-            timeZone = java.util.TimeZone.getTimeZone("UTC")
-        }
-        val date = iso.parse(isoOrDate)
-        if (date != null) {
-            val display = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
-            display.format(date)
-        } else {
-            isoOrDate.take(16).replace("T", " ")
-        }
-    } catch (_: Exception) {
-        if (isoOrDate.contains(":")) isoOrDate.take(16).replace("T", " ") else "Just now"
-    }
+    return TimeUtils.formatLastUpdateTime(isoOrDate)
 }

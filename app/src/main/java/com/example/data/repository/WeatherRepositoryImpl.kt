@@ -64,8 +64,12 @@ class WeatherRepositoryImpl(
         }
 
         try {
-            // Attempt to call unified backend proxy
-            val remoteData = weatherApi.getUnifiedWeather(lat = lat, lon = lon, name = cityName)
+            // Attempt to call /weather endpoint with fallback to /api/weather
+            val remoteData = try {
+                weatherApi.getWeather(lat = lat, lon = lon, name = cityName)
+            } catch (_: Exception) {
+                weatherApi.getUnifiedWeather(lat = lat, lon = lon, name = cityName)
+            }
             // Save to room cache
             val jsonStr = jsonAdapter.toJson(remoteData)
             weatherDao.insertWeather(

@@ -5,8 +5,10 @@ const bmdProvider = new BmdProvider();
 
 export const getBmdObservations = async (req: Request, res: Response) => {
   try {
+    const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
+    const lon = req.query.lon ? parseFloat(req.query.lon as string) : undefined;
     const stationQuery = (req.query.station as string) || undefined;
-    const result = await bmdProvider.getStationObservations(stationQuery);
+    const result = await bmdProvider.getStationObservations(lat, lon, stationQuery);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({

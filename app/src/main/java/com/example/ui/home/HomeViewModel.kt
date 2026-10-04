@@ -40,6 +40,16 @@ class HomeViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private val _isGpsLocating = MutableStateFlow(false)
+    val isGpsLocating: StateFlow<Boolean> = _isGpsLocating.asStateFlow()
+
+    private val _locationMessage = MutableStateFlow<String?>(null)
+    val locationMessage: StateFlow<String?> = _locationMessage.asStateFlow()
+
+    fun dismissLocationMessage() {
+        _locationMessage.value = null
+    }
+
     init {
         // Every time the ViewModel is initialized on app open, check location and fetch fresh data
         checkLocationAndUpdate(forceRefresh = true)
@@ -64,7 +74,7 @@ class HomeViewModel(
                 if (loc != null) {
                     targetLat = loc.latitude
                     targetLon = loc.longitude
-                    // Empty city name instructs backend and OpenWeather to reverse-geocode
+                    // Empty city name instructs backend to reverse-geocode
                     // and return the exact dynamic locality/neighborhood/district name
                     targetCity = ""
                 }
@@ -85,7 +95,7 @@ class HomeViewModel(
                         )
                         _isRefreshing.value = false
 
-                        // Automatically persist dynamic location name obtained from OpenWeather
+                        // Automatically persist dynamic location name obtained from backend
                         if (resource.data.location.name.isNotBlank()) {
                             preferencesRepository.setSelectedLocation(
                                 name = resource.data.location.name,
@@ -96,11 +106,16 @@ class HomeViewModel(
                         }
                     }
                     is Resource.Error -> {
-                        val cached = weatherRepository.getCachedWeather(targetLat, targetLon)
-                        _uiState.value = WeatherUiState.Error(
-                            message = resource.message,
-                            cachedData = cached
-                        )
+                        // Preserves existing success display if available!
+                        if (_uiState.value !is WeatherUiState.Success) {
+                            val cached = weatherRepository.getCachedWeather(targetLat, targetLon)
+                            _uiState.value = WeatherUiState.Error(
+                                message = resource.message,
+                                cachedData = cached
+                            )
+                        } else {
+                            _locationMessage.value = resource.message
+                        }
                         _isRefreshing.value = false
                     }
                 }
@@ -122,8 +137,61 @@ class HomeViewModel(
 
     fun useGps() {
         viewModelScope.launch {
-            preferencesRepository.setUseGpsLocation(true)
-            checkLocationAndUpdate(forceRefresh = true)
+            if (!locationTracker.hasLocationPermission()) {
+                _locationMessage.value = "GPS permission required. Please grant location access."
+                return@launch
+            }
+
+            _isGpsLocating.value = true
+            _isRefreshing.value = true
+            val loc = locationTracker.getCurrentLocation()
+            _isGpsLocating.value = false
+
+            if (loc != null) {
+                preferencesRepository.setUseGpsLocation(true)
+                preferencesRepository.setSelectedLocation("", loc.latitude, loc.longitude, useGps = true)
+                weatherRepository.getWeather(loc.latitude, loc.longitude, "", forceRefresh = true).collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            if (_uiState.value !is WeatherUiState.Success) {
+                                _uiState.value = WeatherUiState.Loading
+                            }
+                        }
+                        is Resource.Success -> {
+                            val prefs = preferencesRepository.userPreferencesFlow.first()
+                            _uiState.value = WeatherUiState.Success(
+                                data = resource.data,
+                                isOfflineCached = resource.isOfflineCached,
+                                userPreferences = prefs
+                            )
+                            _isRefreshing.value = false
+                            if (resource.data.location.name.isNotBlank()) {
+                                preferencesRepository.setSelectedLocation(
+                                    name = resource.data.location.name,
+                                    lat = loc.latitude,
+                                    lon = loc.longitude,
+                                    useGps = true
+                                )
+                            }
+                        }
+                        is Resource.Error -> {
+                            if (_uiState.value !is WeatherUiState.Success) {
+                                val cached = weatherRepository.getCachedWeather(loc.latitude, loc.longitude)
+                                _uiState.value = WeatherUiState.Error(
+                                    message = resource.message,
+                                    cachedData = cached
+                                )
+                            } else {
+                                _locationMessage.value = resource.message
+                            }
+                            _isRefreshing.value = false
+                        }
+                    }
+                }
+            } else {
+                _isRefreshing.value = false
+                _locationMessage.value = "GPS signal unavailable or timeout. Keeping previous location."
+            }
         }
     }
 }

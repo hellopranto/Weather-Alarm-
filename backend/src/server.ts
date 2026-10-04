@@ -33,6 +33,7 @@ app.get('/health', (_req, res) => {
 });
 
 // API Routes
+app.use('/weather', weatherRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/radar', radarRoutes);
 app.use('/api/bmd', bmdRoutes);

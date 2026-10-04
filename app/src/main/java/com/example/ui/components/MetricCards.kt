@@ -172,10 +172,12 @@ fun WeatherMetricsGrid(
                 modifier = Modifier.weight(1f),
                 testTag = "card_rain_prob"
             )
+            val bdSunrise = com.example.util.TimeUtils.formatBangladeshSunTime(sunrise)
+            val bdSunset = com.example.util.TimeUtils.formatBangladeshSunTime(sunset)
             WeatherMetricCard(
                 title = stringResource(R.string.sunrise),
-                value = sunrise,
-                subtitle = "Sunset $sunset",
+                value = bdSunrise,
+                subtitle = "Sunset $bdSunset",
                 icon = Icons.Default.WbSunny,
                 modifier = Modifier.weight(1f),
                 testTag = "card_sun_times"

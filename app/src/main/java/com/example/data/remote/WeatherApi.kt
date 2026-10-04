@@ -7,6 +7,13 @@ import retrofit2.http.Query
 import retrofit2.http.Url
 
 interface WeatherApi {
+    @GET("weather")
+    suspend fun getWeather(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("name") name: String? = null
+    ): UnifiedWeatherResponse
+
     @GET("api/weather")
     suspend fun getUnifiedWeather(
         @Query("lat") lat: Double,

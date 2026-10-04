@@ -10,7 +10,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val DEFAULT_BACKEND_URL = "https://live4.bmd.gov.bd/"
+    private const val DEFAULT_BACKEND_URL = "https://backend-blond-five-79.vercel.app/"
     private const val RAINVIEWER_BASE_URL = "https://api.rainviewer.com/"
 
     val moshi: Moshi by lazy {

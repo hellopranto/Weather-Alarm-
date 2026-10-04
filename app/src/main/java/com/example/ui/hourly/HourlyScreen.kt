@@ -50,6 +50,7 @@ import com.example.ui.components.ErrorStateView
 import com.example.ui.components.WeatherConditionIcon
 import com.example.ui.home.WeatherUiState
 import com.example.ui.home.formatTemp
+import com.example.util.TimeUtils
 
 @Composable
 fun HourlyScreen(
@@ -165,8 +166,11 @@ fun HourlyList(
                         WeatherConditionIcon(weatherCode = item.weatherCode, size = 36.dp)
                         Spacer(modifier = Modifier.width(14.dp))
                         Column {
+                            val displayHour = remember(item.timestamp, item.timeString) {
+                                TimeUtils.formatBangladeshHour(item.timestamp, item.timeString)
+                            }
                             Text(
-                                text = item.timeString,
+                                text = displayHour,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface

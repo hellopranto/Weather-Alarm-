@@ -48,10 +48,22 @@ class DefaultLocationTracker(
 
             try {
                 client.getCurrentLocation(
-                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                    Priority.PRIORITY_HIGH_ACCURACY,
                     cancellationTokenSource.token
                 ).addOnSuccessListener { location ->
-                    continuation.resume(location)
+                    if (location != null) {
+                        continuation.resume(location)
+                    } else {
+                        try {
+                            client.lastLocation.addOnSuccessListener { lastLoc ->
+                                continuation.resume(lastLoc)
+                            }.addOnFailureListener {
+                                continuation.resume(null)
+                            }
+                        } catch (_: SecurityException) {
+                            continuation.resume(null)
+                        }
+                    }
                 }.addOnFailureListener {
                     // Try last known location as fallback
                     try {

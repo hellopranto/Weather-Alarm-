@@ -7,6 +7,8 @@ import com.squareup.moshi.JsonClass
 data class UnifiedWeatherResponse(
     @Json(name = "location") val location: LocationModel,
     @Json(name = "current") val current: CurrentWeatherModel,
+    @Json(name = "weather") val weather: WeatherSimpleModel? = null,
+    @Json(name = "units") val units: WeatherUnitsModel? = null,
     @Json(name = "hourly") val hourly: List<HourlyForecastModel> = emptyList(),
     @Json(name = "daily") val daily: List<DailyForecastModel> = emptyList(),
     @Json(name = "alerts") val alerts: List<WeatherAlertModel> = emptyList(),
@@ -21,7 +23,30 @@ data class LocationModel(
     @Json(name = "district") val district: String? = null,
     @Json(name = "country") val country: String = "Bangladesh",
     @Json(name = "latitude") val latitude: Double,
-    @Json(name = "longitude") val longitude: Double
+    @Json(name = "longitude") val longitude: Double,
+    @Json(name = "village") val village: String? = null,
+    @Json(name = "union") val union: String? = null,
+    @Json(name = "upazila") val upazila: String? = null,
+    @Json(name = "division") val division: String? = null,
+    @Json(name = "displayName") val displayName: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WeatherSimpleModel(
+    @Json(name = "temperature") val temperature: Double? = null,
+    @Json(name = "feelsLike") val feelsLike: Double? = null,
+    @Json(name = "humidity") val humidity: Int? = null,
+    @Json(name = "windSpeed") val windSpeed: Double? = null,
+    @Json(name = "precipitation") val precipitation: Double? = null,
+    @Json(name = "condition") val condition: String? = null,
+    @Json(name = "description") val description: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WeatherUnitsModel(
+    @Json(name = "temperature") val temperature: String = "°C",
+    @Json(name = "speed") val speed: String = "km/h",
+    @Json(name = "precipitation") val precipitation: String = "mm"
 )
 
 @JsonClass(generateAdapter = true)
