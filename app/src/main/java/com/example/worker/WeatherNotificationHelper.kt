@@ -56,18 +56,25 @@ object WeatherNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val hasAlerts = weather.alerts.isNotEmpty()
-        val title = if (hasAlerts) {
-            "⚠️ ${weather.alerts[0].title}"
+        val tempStr = weather.current.temperature?.let { "${it.toInt()}°C" } ?: "--°C"
+        val hasAlerts = weather.alerts.isNotEmpty() || weather.warnings.isNotEmpty()
+        val topAlert = if (weather.alerts.isNotEmpty()) weather.alerts[0] else weather.warnings.firstOrNull()
+
+        val title = if (hasAlerts && topAlert != null) {
+            "⚠️ ${topAlert.titleBn ?: topAlert.title}"
         } else {
-            "🌤️ ${weather.location.name} Weather: ${weather.current.temperature.toInt()}°C"
+            "🌤️ ${weather.location.displayName ?: weather.location.name}: $tempStr"
         }
 
-        val text = if (hasAlerts) {
-            weather.alerts[0].description
+        val text = if (hasAlerts && topAlert != null) {
+            topAlert.descriptionBn ?: topAlert.description
         } else {
-            "${weather.current.condition} • Humidity: ${weather.current.humidity}% • Wind: ${weather.current.windSpeed} km/h"
+            val cond = weather.current.conditionBn ?: weather.current.condition ?: "আবহাওয়া আপডেট"
+            val hum = weather.current.humidity?.let { "$it%" } ?: "--%"
+            val wind = weather.current.windSpeed?.let { "$it km/h" } ?: "-- km/h"
+            "$cond • আর্দ্রতা: $hum • বাতাস: $wind"
         }
+
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)

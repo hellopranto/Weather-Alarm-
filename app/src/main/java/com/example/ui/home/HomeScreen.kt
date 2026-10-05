@@ -1,7 +1,6 @@
 package com.example.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,31 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -48,28 +35,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.R
 import com.example.data.local.TemperatureUnit
-import com.example.data.model.HourlyForecastModel
 import com.example.data.model.UnifiedWeatherResponse
+import com.example.ui.components.AirQualitySection
 import com.example.ui.components.BangladeshDistrictPickerSheet
-import com.example.ui.components.BmdStationObservationCard
-import com.example.ui.components.ErrorStateView
-import com.example.ui.components.OfflineStatusBanner
-import com.example.ui.components.WeatherConditionIcon
-import com.example.ui.components.WeatherMetricsGrid
-import com.example.ui.theme.WeatherAlertWarning
-import com.example.util.TimeUtils
+import com.example.ui.components.HourlyForecastSection
+import com.example.ui.components.SunMoonSection
+import com.example.ui.components.TenDayForecastSection
+import com.example.ui.components.WeatherAlertsSection
+import com.example.ui.components.WeatherHeroCard
+import com.example.ui.components.WeatherMetricsGridBengali
+import com.example.ui.components.WeatherTopHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,9 +84,21 @@ fun HomeScreen(
         }
     )
 
+    val backgroundGradient = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF0D3268),
+            Color(0xFF1B5AA6),
+            Color(0xFF13427E),
+            Color(0xFF0A1B36)
+        )
+    )
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = modifier.fillMaxSize()
+        containerColor = Color.Transparent,
+        modifier = modifier
+            .fillMaxSize()
+            .background(backgroundGradient)
     ) { innerPadding ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
@@ -118,7 +114,20 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.testTag("home_loading"))
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.testTag("home_loading")
+                            )
+                            Text(
+                                text = "আবহাওয়ার তথ্য লোড হচ্ছে...",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
                     }
                 }
                 is WeatherUiState.Error -> {
@@ -129,16 +138,48 @@ fun HomeScreen(
                             tempUnit = TemperatureUnit.CELSIUS,
                             isRefreshing = isRefreshing,
                             isGpsLocating = isGpsLocating,
-                            onOpenPicker = { isPickerOpen = true },
+                            onOpenMenu = { isPickerOpen = true },
                             onUseGps = { viewModel.useGps() },
                             onRefresh = { viewModel.loadWeather(forceRefresh = true) },
                             onNavigateToAlerts = onNavigateToAlerts
                         )
                     } else {
-                        ErrorStateView(
-                            message = state.message.ifBlank { stringResource(R.string.error_generic) },
-                            onRetry = { viewModel.loadWeather(forceRefresh = true) }
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    text = "BMD থেকে সর্বশেষ তথ্য পাওয়া যাচ্ছে না।",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = state.message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.75f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = { viewModel.loadWeather(forceRefresh = true) },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.White,
+                                        contentColor = Color(0xFF0F3870)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("পুনরায় চেষ্টা করুন", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     }
                 }
                 is WeatherUiState.Success -> {
@@ -146,10 +187,9 @@ fun HomeScreen(
                         weather = state.data,
                         isOffline = state.isOfflineCached,
                         tempUnit = state.userPreferences.temperatureUnit,
-                        windUnit = state.userPreferences.windUnit,
                         isRefreshing = isRefreshing,
                         isGpsLocating = isGpsLocating,
-                        onOpenPicker = { isPickerOpen = true },
+                        onOpenMenu = { isPickerOpen = true },
                         onUseGps = { viewModel.useGps() },
                         onRefresh = { viewModel.loadWeather(forceRefresh = true) },
                         onNavigateToAlerts = onNavigateToAlerts
@@ -165,411 +205,129 @@ fun HomeContent(
     weather: UnifiedWeatherResponse,
     isOffline: Boolean,
     tempUnit: TemperatureUnit,
-    windUnit: com.example.data.local.WindUnit = com.example.data.local.WindUnit.KMH,
     isRefreshing: Boolean = false,
     isGpsLocating: Boolean = false,
-    onOpenPicker: () -> Unit,
+    onOpenMenu: () -> Unit,
     onUseGps: () -> Unit,
     onRefresh: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val areaTitle = remember(weather.location) {
-        val village = weather.location.village?.trim().orEmpty()
-        val name = weather.location.name.trim()
-        if (village.isNotBlank()) village else if (name.isNotBlank()) name else "Bangladesh"
-    }
-
-    val adminHierarchy = remember(weather.location) {
-        val parts = mutableListOf<String>()
-        val upazila = weather.location.upazila?.trim().orEmpty()
-        val district = weather.location.district?.trim().orEmpty()
-        val division = weather.location.division?.trim().orEmpty()
-
-        if (upazila.isNotBlank()) parts.add(upazila)
-        if (district.isNotBlank() && !district.equals(upazila, ignoreCase = true) && !district.contains(upazila, ignoreCase = true)) {
-            parts.add(district)
-        }
-        if (division.isNotBlank() && !division.equals(district, ignoreCase = true)) {
-            parts.add(division)
-        }
-        if (parts.isNotEmpty()) parts.joinToString(" • ") else weather.location.country
-    }
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 28.dp),
+        contentPadding = PaddingValues(top = 10.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Location & Header Action Bar
+        // 1. Top Header: ☰ | কুড়িগ্রাম সদর, কুড়িগ্রাম | সোমবার, ০৫ অক্টোবর, ২০২৬ | Action icons
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_header"),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable { onOpenPicker() }
-                        .padding(vertical = 4.dp, horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = areaTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Change location",
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                        if (adminHierarchy.isNotBlank()) {
-                            Text(
-                                text = adminHierarchy,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Schedule,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            val displayTime = formatLastUpdateTime(weather.updatedAt)
-                            Text(
-                                text = stringResource(R.string.last_updated, displayTime),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onRefresh,
-                        enabled = !isRefreshing,
-                        modifier = Modifier.testTag("btn_refresh_top")
-                    ) {
-                        if (isRefreshing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = stringResource(R.string.pull_to_refresh),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    IconButton(
-                        onClick = onUseGps,
-                        enabled = !isGpsLocating,
-                        modifier = Modifier.testTag("btn_gps_location")
-                    ) {
-                        if (isGpsLocating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.MyLocation,
-                                contentDescription = stringResource(R.string.use_gps),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    IconButton(
-                        onClick = onOpenPicker,
-                        modifier = Modifier.testTag("btn_search_location")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = stringResource(R.string.search_title),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+            WeatherTopHeader(
+                location = weather.location,
+                isRefreshing = isRefreshing,
+                isGpsLocating = isGpsLocating,
+                onOpenMenu = onOpenMenu,
+                onRefresh = onRefresh,
+                onUseGps = onUseGps
+            )
         }
 
-        // Offline Banner
+        // Offline Cached Banner if offline
         if (isOffline) {
             item {
-                OfflineStatusBanner(lastUpdated = weather.updatedAt)
-            }
-        }
-
-        // Active Alert Warning Banner if present
-        if (weather.alerts.isNotEmpty()) {
-            item {
-                val topAlert = weather.alerts[0]
-                Card(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onNavigateToAlerts() }
-                        .testTag("home_alert_banner"),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = WeatherAlertWarning.copy(alpha = 0.2f))
+                        .background(Color(0x33000000), shape = RoundedCornerShape(12.dp))
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = WeatherAlertWarning,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = topAlert.title,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = stringResource(R.string.alert_source_prefix, topAlert.source),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = Color(0xFFFFCC80),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "সর্বশেষ সংরক্ষিত তথ্য প্রদর্শিত হচ্ছে",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
                 }
             }
         }
 
-        // Main Weather Hero Card
+        // 2. Main Weather Hero Card (Large temp, condition, feels like, high/low, BMD station badge)
         item {
-            val currentTemp = formatTemp(weather.current.temperature, tempUnit)
-            val feelsLike = formatTemp(weather.current.feelsLike, tempUnit)
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("main_weather_card"),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = stringResource(R.string.current_weather),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                            )
-                            Text(
-                                text = weather.current.condition,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                        WeatherConditionIcon(
-                            weatherCode = weather.current.weatherCode,
-                            size = 56.dp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = currentTemp,
-                        fontSize = 64.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.testTag("hero_temperature_text")
-                    )
-
-                    Text(
-                        text = stringResource(R.string.feels_like, feelsLike),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-                    )
-
-                    if (weather.current.description.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = weather.current.description.replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
-                        )
-                    }
-                }
-            }
+            WeatherHeroCard(
+                current = weather.current,
+                station = weather.station,
+                tempUnit = tempUnit
+            )
         }
 
-        // Hourly Forecast Horizontal Preview
+        // 3. Hourly Forecast ("পরবর্তী ২৪ ঘণ্টার পূর্বাভাস")
         if (weather.hourly.isNotEmpty()) {
             item {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.hourly_forecast),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(weather.hourly, key = { it.timestamp }) { item ->
-                            HourlyItemCard(item = item, tempUnit = tempUnit)
-                        }
-                    }
-                }
+                HourlyForecastSection(
+                    hourly = weather.hourly,
+                    tempUnit = tempUnit
+                )
             }
         }
 
-        // BMD Station Observation Details
-        if (weather.bmd != null && weather.bmd.observation != null) {
+        // 4. 10-Day Forecast ("১০ দিনের পূর্বাভাস")
+        if (weather.daily.isNotEmpty()) {
             item {
-                BmdStationObservationCard(observation = weather.bmd.observation)
+                TenDayForecastSection(
+                    daily = weather.daily,
+                    tempUnit = tempUnit
+                )
             }
         }
 
-        // Weather Metrics Grid (Humidity, Wind, Pressure, Visibility, Sunrise, Sunset)
+        // 5. Weather Metric Cards (2-column grid in Bengali: বাতাস, বায়ু চাপ, সম্ভাব্য বৃষ্টিপাত, অতিবেগুনী রশ্মি, আর্দ্রতা, দৃশ্যমানতা)
         item {
-            Text(
-                text = stringResource(R.string.current_weather) + " Metrics",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            WeatherMetricsGrid(
-                humidity = weather.current.humidity,
+            WeatherMetricsGridBengali(
                 windSpeedKmh = weather.current.windSpeed,
                 windDirectionDegrees = weather.current.windDirection,
                 pressureHpa = weather.current.pressure,
-                visibilityMeters = weather.current.visibility,
-                sunrise = TimeUtils.formatBangladeshSunTime(weather.current.sunrise),
-                sunset = TimeUtils.formatBangladeshSunTime(weather.current.sunset),
-                rainProbability = weather.current.rainProbability,
-                precipitationMm = weather.current.precipitationMm,
-                windUnit = windUnit
+                rainfallMm = weather.current.rainfall ?: weather.current.precipitationMm,
+                uvIndex = weather.current.uvIndex,
+                humidity = weather.current.humidity,
+                visibilityMeters = weather.current.visibility
             )
         }
-    }
-}
 
-@Composable
-fun HourlyItemCard(
-    item: HourlyForecastModel,
-    tempUnit: TemperatureUnit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .width(80.dp)
-            .testTag("hourly_item_${item.timeString}"),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(vertical = 12.dp, horizontal = 8.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            val displayHour = remember(item.timestamp, item.timeString) {
-                TimeUtils.formatBangladeshHour(item.timestamp, item.timeString)
+        // 6. Sun & Moon ("সূর্য ও চাঁদ")
+        if (weather.sunMoon != null) {
+            item {
+                SunMoonSection(sunMoon = weather.sunMoon)
             }
-            Text(
-                text = displayHour,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            WeatherConditionIcon(
-                weatherCode = item.weatherCode,
-                size = 28.dp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = formatTemp(item.temperature, tempUnit),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "${item.rainProbability}%",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold
+        }
+
+        // 7. Air Quality ("বাতাসের গুণগত মান")
+        item {
+            AirQualitySection(airQuality = weather.airQuality)
+        }
+
+        // 8. Weather Alerts ("এইরূপ আবহাওয়ায় করণীয়")
+        item {
+            val allWarnings = if (weather.warnings.isNotEmpty()) weather.warnings else weather.alerts
+            WeatherAlertsSection(
+                warnings = allWarnings,
+                onNavigateToAlerts = onNavigateToAlerts
             )
         }
     }
 }
 
-fun formatTemp(celsius: Double, unit: TemperatureUnit): String {
+fun formatTemp(celsius: Double?, unit: TemperatureUnit): String {
+    if (celsius == null) return "--"
     return when (unit) {
         TemperatureUnit.CELSIUS -> "%.0f°C".format(celsius)
         TemperatureUnit.FAHRENHEIT -> "%.0f°F".format(celsius * 9 / 5 + 32)
     }
 }
 
-fun formatLastUpdateTime(isoOrDate: String): String {
-    return TimeUtils.formatLastUpdateTime(isoOrDate)
-}

@@ -54,4 +54,17 @@ class ExampleUnitTest {
         assertEquals("Dhaka", parsed?.location?.name)
         assertEquals(31.0, parsed?.current?.temperature ?: 0.0, 0.01)
     }
+
+    @Test
+    fun banglaUtils_convertsDigitsAndFormatsMetrics() {
+        assertEquals("৩০°C", com.example.util.BanglaUtils.formatTemp(30.0))
+        assertEquals("৬৩%", com.example.util.BanglaUtils.formatHumidity(63))
+        assertEquals("১০১০ hPa", com.example.util.BanglaUtils.formatPressure(1010))
+        assertEquals("৩.১ কিমি/ঘণ্টা", com.example.util.BanglaUtils.formatWind(3.1))
+        assertEquals("০ মিমি", com.example.util.BanglaUtils.formatRainfall(0.0))
+        assertEquals("৬ কিমি", com.example.util.BanglaUtils.formatVisibility(6000))
+        assertEquals("২", com.example.util.BanglaUtils.formatUvIndex(2.0))
+        assertEquals("প্রধানত মেঘলা", com.example.util.BanglaUtils.mapCondition("Mostly Cloudy", 802))
+    }
 }
+
