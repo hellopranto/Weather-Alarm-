@@ -28,8 +28,8 @@ data class LocationModel(
     @Json(name = "name") val name: String = "",
     @Json(name = "district") val district: String? = null,
     @Json(name = "country") val country: String = "বাংলাদেশ",
-    @Json(name = "latitude") val latitude: Double = 23.8103,
-    @Json(name = "longitude") val longitude: Double = 90.4125,
+    @Json(name = "latitude") val latitude: Double = 0.0,
+    @Json(name = "longitude") val longitude: Double = 0.0,
     @Json(name = "village") val village: String? = null,
     @Json(name = "union") val union: String? = null,
     @Json(name = "upazila") val upazila: String? = null,
@@ -73,10 +73,16 @@ data class CurrentWeatherModel(
     @Json(name = "humidity") val humidity: Int? = null,
     @Json(name = "windSpeed") val windSpeed: Double? = null, // in km/h
     @Json(name = "windDirection") val windDirection: Int? = null, // in degrees
+    @Json(name = "windGust") val windGust: Double? = null,
     @Json(name = "pressure") val pressure: Int? = null, // in hPa
     @Json(name = "visibility") val visibility: Int? = null, // in meters
+    @Json(name = "dewPoint") val dewPoint: Double? = null,
+    @Json(name = "cloudCoverage") val cloudCoverage: Int? = null,
     @Json(name = "rainfall") val rainfall: Double? = null,
+    @Json(name = "rainProbability") val rainProbability: Int? = null,
+    @Json(name = "precipitationMm") val precipitationMm: Double? = null,
     @Json(name = "uvIndex") val uvIndex: Double? = null,
+    @Json(name = "sunshineDuration") val sunshineDuration: Double? = null,
     @Json(name = "condition") val condition: String? = null,
     @Json(name = "conditionBn") val conditionBn: String? = null,
     @Json(name = "description") val description: String? = null,
@@ -84,8 +90,6 @@ data class CurrentWeatherModel(
     @Json(name = "icon") val icon: String = "01d",
     @Json(name = "sunrise") val sunrise: String? = null,
     @Json(name = "sunset") val sunset: String? = null,
-    @Json(name = "rainProbability") val rainProbability: Int? = null,
-    @Json(name = "precipitationMm") val precipitationMm: Double? = null,
     @Json(name = "recordedAt") val recordedAt: String? = null
 )
 
@@ -98,6 +102,8 @@ data class HourlyForecastModel(
     @Json(name = "feelsLike") val feelsLike: Double? = null,
     @Json(name = "humidity") val humidity: Int? = null,
     @Json(name = "pressure") val pressure: Int? = null,
+    @Json(name = "dewPoint") val dewPoint: Double? = null,
+    @Json(name = "cloudCoverage") val cloudCoverage: Int? = null,
     @Json(name = "condition") val condition: String = "Clear",
     @Json(name = "conditionBn") val conditionBn: String? = null,
     @Json(name = "description") val description: String = "",
@@ -106,7 +112,8 @@ data class HourlyForecastModel(
     @Json(name = "rainProbability") val rainProbability: Int = 0,
     @Json(name = "precipitationMm") val precipitationMm: Double = 0.0,
     @Json(name = "windSpeed") val windSpeed: Double = 0.0,
-    @Json(name = "windDirection") val windDirection: Int = 0
+    @Json(name = "windDirection") val windDirection: Int = 0,
+    @Json(name = "windGust") val windGust: Double? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -122,7 +129,12 @@ data class DailyForecastModel(
     @Json(name = "icon") val icon: String = "01d",
     @Json(name = "weatherCode") val weatherCode: Int = 800,
     @Json(name = "rainProbability") val rainProbability: Int = 0,
-    @Json(name = "precipitationMm") val precipitationMm: Double = 0.0
+    @Json(name = "precipitationMm") val precipitationMm: Double = 0.0,
+    @Json(name = "windSpeed") val windSpeed: Double? = null,
+    @Json(name = "humidity") val humidity: Int? = null,
+    @Json(name = "cloudCoverage") val cloudCoverage: Int? = null,
+    @Json(name = "sunrise") val sunrise: String? = null,
+    @Json(name = "sunset") val sunset: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -131,7 +143,12 @@ data class AirQualityModel(
     @Json(name = "category") val category: String? = null,
     @Json(name = "categoryBn") val categoryBn: String? = null,
     @Json(name = "pm25") val pm25: Double? = null,
-    @Json(name = "pm10") val pm10: Double? = null
+    @Json(name = "pm10") val pm10: Double? = null,
+    @Json(name = "co") val co: Double? = null,
+    @Json(name = "no2") val no2: Double? = null,
+    @Json(name = "so2") val so2: Double? = null,
+    @Json(name = "o3") val o3: Double? = null,
+    @Json(name = "healthRecommendation") val healthRecommendation: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -152,11 +169,13 @@ data class WeatherAlertModel(
     @Json(name = "description") val description: String = "",
     @Json(name = "descriptionBn") val descriptionBn: String? = null,
     @Json(name = "severity") val severity: String = "INFO", // INFO, WARNING, DANGER, GREAT_DANGER
+    @Json(name = "area") val area: String? = null,
     @Json(name = "startTime") val startTime: String = "",
     @Json(name = "endTime") val endTime: String = "",
     @Json(name = "source") val source: String = "BMD",
     @Json(name = "signalNumber") val signalNumber: Int? = null,
-    @Json(name = "regions") val regions: List<String> = emptyList()
+    @Json(name = "regions") val regions: List<String> = emptyList(),
+    @Json(name = "instructions") val instructions: String? = null
 )
 
 @JsonClass(generateAdapter = true)
