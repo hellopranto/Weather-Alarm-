@@ -277,12 +277,14 @@ fun WeatherHeroCard(
             // Large Temperature Display (72sp Anek Bangla Bold)
             Text(
                 text = tempText,
+                fontFamily = com.example.ui.theme.AnekBanglaFontFamily,
                 fontSize = 72.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
                 lineHeight = 76.sp,
                 modifier = Modifier.testTag("hero_temperature_text")
             )
+
 
             // Feels Like Temperature
             if (feelsLikeText.isNotBlank()) {

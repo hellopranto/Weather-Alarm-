@@ -18,32 +18,35 @@ class RadarRepositoryImpl(
     override fun getRadarMetadata(): Flow<Resource<RainViewerResponse>> = flow {
         emit(Resource.Loading)
         try {
-            val response = radarApi.getRainViewerPublicMaps()
-            if (response.radar != null && response.radar.past.isNotEmpty()) {
-                emit(Resource.Success(response))
+            // 1. Fetch live radar data from real backend endpoint
+            val backendResponse = radarApi.getBackendRadarMaps()
+            val frames = backendResponse.allPastFrames
+            if (frames.isNotEmpty()) {
+                val normalized = backendResponse.copy(
+                    radar = RadarSeries(past = frames, nowcast = backendResponse.nowcastList.orEmpty())
+                )
+                emit(Resource.Success(normalized))
                 return@flow
             }
-        } catch (_: Exception) {
-            // If primary endpoint fails, try alternative or return fallback
+        } catch (_: Exception) {}
+
+        try {
+            // 2. Fallback to upstream RainViewer public API directly
+            val publicResponse = radarApi.getRainViewerPublicMaps()
+            val frames = publicResponse.allPastFrames
+            if (frames.isNotEmpty()) {
+                val normalized = publicResponse.copy(
+                    radar = RadarSeries(past = frames, nowcast = publicResponse.radar?.nowcast.orEmpty())
+                )
+                emit(Resource.Success(normalized))
+                return@flow
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "ডপলার রাডার তথ্য পাওয়া যায়নি।"))
+            return@flow
         }
 
-        // Generate realistic radar frames for Bangladesh if offline
-        val now = System.currentTimeMillis() / 1000
-        val fallbackPast = listOf(
-            RadarFrameItem(time = now - 3000, path = "/v2/radar/${now - 3000}"),
-            RadarFrameItem(time = now - 2400, path = "/v2/radar/${now - 2400}"),
-            RadarFrameItem(time = now - 1800, path = "/v2/radar/${now - 1800}"),
-            RadarFrameItem(time = now - 1200, path = "/v2/radar/${now - 1200}"),
-            RadarFrameItem(time = now - 600, path = "/v2/radar/${now - 600}"),
-            RadarFrameItem(time = now, path = "/v2/radar/$now")
-        )
-        val fallbackResponse = RainViewerResponse(
-            version = "2.0",
-            generated = now,
-            host = "https://tilecache.rainviewer.com",
-            radar = RadarSeries(past = fallbackPast, nowcast = emptyList())
-        )
-        emit(Resource.Success(fallbackResponse, isOfflineCached = true))
+        emit(Resource.Error("ডপলার রাডার তথ্য পাওয়া যায়নি।"))
     }.flowOn(Dispatchers.IO)
 
     override fun getTileUrl(

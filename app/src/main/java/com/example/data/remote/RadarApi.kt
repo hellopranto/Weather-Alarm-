@@ -5,7 +5,10 @@ import retrofit2.http.GET
 import retrofit2.http.Url
 
 interface RadarApi {
-    @GET("public/weather-maps.json")
+    @GET("api/radar")
+    suspend fun getBackendRadarMaps(): RainViewerResponse
+
+    @GET("https://api.rainviewer.com/public/weather-maps.json")
     suspend fun getRainViewerPublicMaps(): RainViewerResponse
 
     @GET

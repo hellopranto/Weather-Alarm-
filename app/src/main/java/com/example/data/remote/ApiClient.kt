@@ -10,8 +10,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val DEFAULT_BACKEND_URL = "https://backend-blond-five-79.vercel.app/"
-    private const val RAINVIEWER_BASE_URL = "https://api.rainviewer.com/"
+    const val DEFAULT_BACKEND_URL = "https://backend-blond-five-79.vercel.app/"
 
     val moshi: Moshi by lazy {
         Moshi.Builder()
@@ -31,8 +30,8 @@ object ApiClient {
             .build()
     }
 
-    val weatherApi: WeatherApi by lazy {
-        val baseUrl = try {
+    private fun getBackendBaseUrl(): String {
+        return try {
             val url = BuildConfig.BACKEND_BASE_URL
             if (url.isNotBlank() && url.startsWith("http")) {
                 if (url.endsWith("/")) url else "$url/"
@@ -42,9 +41,11 @@ object ApiClient {
         } catch (_: Exception) {
             DEFAULT_BACKEND_URL
         }
+    }
 
+    val weatherApi: WeatherApi by lazy {
         Retrofit.Builder()
-            .baseUrl(baseUrl)
+            .baseUrl(getBackendBaseUrl())
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -52,19 +53,8 @@ object ApiClient {
     }
 
     val bmdApi: BmdApi by lazy {
-        val baseUrl = try {
-            val url = BuildConfig.BMD_API_BASE_URL
-            if (url.isNotBlank() && url.startsWith("http")) {
-                if (url.endsWith("/")) url else "$url/"
-            } else {
-                DEFAULT_BACKEND_URL
-            }
-        } catch (_: Exception) {
-            DEFAULT_BACKEND_URL
-        }
-
         Retrofit.Builder()
-            .baseUrl(baseUrl)
+            .baseUrl(getBackendBaseUrl())
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -73,7 +63,7 @@ object ApiClient {
 
     val radarApi: RadarApi by lazy {
         Retrofit.Builder()
-            .baseUrl(RAINVIEWER_BASE_URL)
+            .baseUrl(getBackendBaseUrl())
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()

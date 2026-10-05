@@ -63,8 +63,9 @@ class RadarViewModel(
                     is Resource.Loading -> _uiState.value = _uiState.value.copy(isLoading = true)
                     is Resource.Success -> {
                         val response = resource.data
-                        val pastFrames = response.radar?.past ?: emptyList()
+                        val pastFrames = response.allPastFrames
                         val initialIndex = if (pastFrames.isNotEmpty()) pastFrames.size - 1 else 0
+
 
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,

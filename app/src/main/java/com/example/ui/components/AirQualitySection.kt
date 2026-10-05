@@ -116,10 +116,12 @@ fun AirQualitySection(
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 text = BanglaUtils.toBanglaDigits(aqi),
+                                fontFamily = com.example.ui.theme.AnekBanglaFontFamily,
                                 fontSize = 42.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
                             )
+
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "AQI",

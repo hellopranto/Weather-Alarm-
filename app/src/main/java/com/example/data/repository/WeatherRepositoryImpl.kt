@@ -55,10 +55,11 @@ class WeatherRepositoryImpl(
 
         try {
             // Attempt to call unified /api/weather endpoint with fallback to /weather
+            val queryName = if (cityName.isNotBlank()) cityName else null
             val remoteData = try {
-                weatherApi.getUnifiedWeather(lat = lat, lon = lon, name = cityName)
+                weatherApi.getUnifiedWeather(lat = lat, lon = lon, name = queryName)
             } catch (_: Exception) {
-                weatherApi.getWeather(lat = lat, lon = lon, name = cityName)
+                weatherApi.getWeather(lat = lat, lon = lon, name = queryName)
             }
 
             // Save real data to room cache
@@ -75,6 +76,7 @@ class WeatherRepositoryImpl(
             )
             emit(Resource.Success(remoteData, isOfflineCached = false))
         } catch (e: Exception) {
+
             // If network fails, serve authentic cached data if available; NEVER fabricate fake weather
             if (cachedResponse != null) {
                 emit(Resource.Success(cachedResponse, isOfflineCached = true))

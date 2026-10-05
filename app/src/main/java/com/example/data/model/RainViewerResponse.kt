@@ -9,8 +9,17 @@ data class RainViewerResponse(
     @Json(name = "generated") val generated: Long = 0L,
     @Json(name = "host") val host: String = "https://tilecache.rainviewer.com",
     @Json(name = "radar") val radar: RadarSeries? = null,
+    @Json(name = "past") val pastList: List<RadarFrameItem>? = null,
+    @Json(name = "nowcast") val nowcastList: List<RadarFrameItem>? = null,
     @Json(name = "satellite") val satellite: SatelliteSeries? = null
-)
+) {
+    val allPastFrames: List<RadarFrameItem>
+        get() = when {
+            radar != null && radar.past.isNotEmpty() -> radar.past
+            !pastList.isNullOrEmpty() -> pastList
+            else -> emptyList()
+        }
+}
 
 @JsonClass(generateAdapter = true)
 data class RadarSeries(
