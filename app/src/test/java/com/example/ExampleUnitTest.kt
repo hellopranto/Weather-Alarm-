@@ -66,5 +66,20 @@ class ExampleUnitTest {
         assertEquals("২", com.example.util.BanglaUtils.formatUvIndex(2.0))
         assertEquals("প্রধানত মেঘলা", com.example.util.BanglaUtils.mapCondition("Mostly Cloudy", 802))
     }
+
+    @Test
+    fun locationSuggestions_hasNageshwariAndKurigram() {
+        val defaultList = com.example.location.LocationServiceImpl.DEFAULT_SUGGESTIONS
+        assertTrue(defaultList.any { it.nameBn.contains("নাগেশ্বরী") })
+        assertTrue(defaultList.any { it.nameBn.contains("কুড়িগ্রাম") })
+
+        val adminList = com.example.location.LocationServiceImpl.BANGLADESH_ADMIN_DATA
+        assertTrue(adminList.any { it.nameBn == "নাগেশ্বরী শহর" })
+        val nageshwari = adminList.first { it.nameBn == "নাগেশ্বরী শহর" }
+        assertEquals("শহর", nageshwari.typeLabel)
+        assertEquals(25.9667, nageshwari.latitude, 0.001)
+        assertEquals(89.6833, nageshwari.longitude, 0.001)
+    }
 }
+
 

@@ -11,6 +11,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 class DefaultLocationTracker(
@@ -43,47 +44,48 @@ class DefaultLocationTracker(
             return null
         }
 
-        return suspendCancellableCoroutine { continuation ->
-            val cancellationTokenSource = CancellationTokenSource()
+        return withTimeoutOrNull(9000L) {
+            suspendCancellableCoroutine { continuation ->
+                val cancellationTokenSource = CancellationTokenSource()
 
-            try {
-                client.getCurrentLocation(
-                    Priority.PRIORITY_HIGH_ACCURACY,
-                    cancellationTokenSource.token
-                ).addOnSuccessListener { location ->
-                    if (location != null) {
-                        continuation.resume(location)
-                    } else {
+                try {
+                    client.getCurrentLocation(
+                        Priority.PRIORITY_HIGH_ACCURACY,
+                        cancellationTokenSource.token
+                    ).addOnSuccessListener { location ->
+                        if (location != null) {
+                            if (continuation.isActive) continuation.resume(location)
+                        } else {
+                            try {
+                                client.lastLocation.addOnSuccessListener { lastLoc ->
+                                    if (continuation.isActive) continuation.resume(lastLoc)
+                                }.addOnFailureListener {
+                                    if (continuation.isActive) continuation.resume(null)
+                                }
+                            } catch (_: SecurityException) {
+                                if (continuation.isActive) continuation.resume(null)
+                            }
+                        }
+                    }.addOnFailureListener {
                         try {
                             client.lastLocation.addOnSuccessListener { lastLoc ->
-                                continuation.resume(lastLoc)
+                                if (continuation.isActive) continuation.resume(lastLoc)
                             }.addOnFailureListener {
-                                continuation.resume(null)
+                                if (continuation.isActive) continuation.resume(null)
                             }
                         } catch (_: SecurityException) {
-                            continuation.resume(null)
+                            if (continuation.isActive) continuation.resume(null)
                         }
+                    }.addOnCanceledListener {
+                        if (continuation.isActive) continuation.cancel()
                     }
-                }.addOnFailureListener {
-                    // Try last known location as fallback
-                    try {
-                        client.lastLocation.addOnSuccessListener { lastLoc ->
-                            continuation.resume(lastLoc)
-                        }.addOnFailureListener {
-                            continuation.resume(null)
-                        }
-                    } catch (_: SecurityException) {
-                        continuation.resume(null)
-                    }
-                }.addOnCanceledListener {
-                    continuation.cancel()
+                } catch (_: SecurityException) {
+                    if (continuation.isActive) continuation.resume(null)
                 }
-            } catch (_: SecurityException) {
-                continuation.resume(null)
-            }
 
-            continuation.invokeOnCancellation {
-                cancellationTokenSource.cancel()
+                continuation.invokeOnCancellation {
+                    cancellationTokenSource.cancel()
+                }
             }
         }
     }

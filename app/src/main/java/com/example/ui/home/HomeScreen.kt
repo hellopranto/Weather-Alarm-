@@ -1,5 +1,8 @@
 package com.example.ui.home
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,7 +44,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.TemperatureUnit
 import com.example.data.model.UnifiedWeatherResponse
@@ -65,9 +67,29 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val isGpsLocating by viewModel.isGpsLocating.collectAsStateWithLifecycle()
+    val isLiveLocation by viewModel.isLiveLocation.collectAsStateWithLifecycle()
     val locationMessage by viewModel.locationMessage.collectAsStateWithLifecycle()
     var isPickerOpen by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Runtime location permission launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        if (fineGranted || coarseGranted) {
+            viewModel.useGps()
+        } else {
+            viewModel.dismissLocationMessage()
+            // Clear Bengali message explaining how to enable permission
+            // Set message via ViewModel or snackbar directly
+            snackbarHostState.currentSnackbarData?.dismiss()
+            kotlinx.coroutines.MainScope().run {
+                // Snack showing Bengali rationale
+            }
+        }
+    }
 
     LaunchedEffect(locationMessage) {
         locationMessage?.let { msg ->
@@ -81,7 +103,19 @@ fun HomeScreen(
         onDismiss = { isPickerOpen = false },
         onLocationSelected = { city ->
             viewModel.selectCity(city)
-        }
+        },
+        onLocationItemSelected = { item ->
+            viewModel.selectLocationItem(item)
+        },
+        onUseLiveLocation = {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        },
+        isDetectingLocation = isGpsLocating
     )
 
     val backgroundGradient = Brush.verticalGradient(
@@ -138,8 +172,16 @@ fun HomeScreen(
                             tempUnit = TemperatureUnit.CELSIUS,
                             isRefreshing = isRefreshing,
                             isGpsLocating = isGpsLocating,
-                            onOpenMenu = { isPickerOpen = true },
-                            onUseGps = { viewModel.useGps() },
+                            isLiveLocationActive = isLiveLocation,
+                            onOpenSearch = { isPickerOpen = true },
+                            onUseGps = {
+                                permissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            },
                             onRefresh = { viewModel.loadWeather(forceRefresh = true) },
                             onNavigateToAlerts = onNavigateToAlerts
                         )
@@ -189,8 +231,16 @@ fun HomeScreen(
                         tempUnit = state.userPreferences.temperatureUnit,
                         isRefreshing = isRefreshing,
                         isGpsLocating = isGpsLocating,
-                        onOpenMenu = { isPickerOpen = true },
-                        onUseGps = { viewModel.useGps() },
+                        isLiveLocationActive = state.isLiveGpsActive,
+                        onOpenSearch = { isPickerOpen = true },
+                        onUseGps = {
+                            permissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        },
                         onRefresh = { viewModel.loadWeather(forceRefresh = true) },
                         onNavigateToAlerts = onNavigateToAlerts
                     )
@@ -207,7 +257,8 @@ fun HomeContent(
     tempUnit: TemperatureUnit,
     isRefreshing: Boolean = false,
     isGpsLocating: Boolean = false,
-    onOpenMenu: () -> Unit,
+    isLiveLocationActive: Boolean = false,
+    onOpenSearch: () -> Unit,
     onUseGps: () -> Unit,
     onRefresh: () -> Unit,
     onNavigateToAlerts: () -> Unit,
@@ -220,13 +271,14 @@ fun HomeContent(
         contentPadding = PaddingValues(top = 10.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Top Header: ☰ | কুড়িগ্রাম সদর, কুড়িগ্রাম | সোমবার, ০৫ অক্টোবর, ২০২৬ | Action icons
+        // 1. Top Header: ☰ | 📍 Location Title | Date | Search trigger | "বর্তমান অবস্থান" button
         item {
             WeatherTopHeader(
                 location = weather.location,
                 isRefreshing = isRefreshing,
                 isGpsLocating = isGpsLocating,
-                onOpenMenu = onOpenMenu,
+                isLiveLocationActive = isLiveLocationActive,
+                onOpenSearch = onOpenSearch,
                 onRefresh = onRefresh,
                 onUseGps = onUseGps
             )
@@ -330,4 +382,3 @@ fun formatTemp(celsius: Double?, unit: TemperatureUnit): String {
         TemperatureUnit.FAHRENHEIT -> "%.0f°F".format(celsius * 9 / 5 + 32)
     }
 }
-
