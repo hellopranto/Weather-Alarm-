@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -47,9 +47,7 @@ fun TenDayForecastSection(
             .fillMaxWidth()
             .testTag("ten_day_forecast_card"),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0x33102A4E)
-        )
+        colors = CardDefaults.cardColors(containerColor = Color(0x33102A4E))
     ) {
         Column(
             modifier = Modifier
@@ -111,7 +109,6 @@ fun DailyForecastRowBengali(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Icon
         WeatherConditionIcon(
             weatherCode = item.weatherCode,
             size = 36.dp
@@ -119,7 +116,6 @@ fun DailyForecastRowBengali(
 
         Spacer(modifier = Modifier.width(14.dp))
 
-        // বার, তারিখ, অবস্থা
         Column(modifier = Modifier.weight(1f)) {
             val dayName = item.dayNameBn ?: item.dayName
             val dateText = item.dateFormattedBn ?: BanglaUtils.toBanglaDigits(item.date)
@@ -147,11 +143,10 @@ fun DailyForecastRowBengali(
             )
         }
 
-        // High / Low temp
-        val highTemp = BanglaUtils.formatTemp(item.tempMax, tempUnit)
-        val lowTemp = BanglaUtils.formatTemp(item.tempMin, tempUnit)
+        Column(horizontalAlignment = Alignment.End) {
+            val highTemp = BanglaUtils.formatTemp(item.tempMax, tempUnit)
+            val lowTemp = BanglaUtils.formatTemp(item.tempMin, tempUnit)
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "$highTemp / $lowTemp",
                 style = MaterialTheme.typography.bodyLarge,
@@ -159,14 +154,26 @@ fun DailyForecastRowBengali(
                 color = Color.White
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.4f),
-                modifier = Modifier.size(14.dp)
-            )
+            if (item.rainProbability > 0) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.WaterDrop,
+                        contentDescription = null,
+                        tint = Color(0xFF64B5F6),
+                        modifier = Modifier.size(11.dp)
+                    )
+                    Text(
+                        text = "${BanglaUtils.toBanglaDigits(item.rainProbability)}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF90CAF9),
+                        fontSize = 10.sp
+                    )
+                }
+            }
         }
     }
 }

@@ -10,13 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Brightness2
 import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -39,14 +36,15 @@ fun SunMoonSection(
     sunMoon: SunMoonModel?,
     modifier: Modifier = Modifier
 ) {
+    if (sunMoon == null) return
+    if (sunMoon.sunrise == null && sunMoon.sunset == null && sunMoon.moonrise == null && sunMoon.moonset == null) return
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("sun_moon_card"),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0x33102A4E)
-        )
+        colors = CardDefaults.cardColors(containerColor = Color(0x33102A4E))
     ) {
         Column(
             modifier = Modifier
@@ -81,137 +79,144 @@ fun SunMoonSection(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2 column layout: Left = Sun (সূর্য), Right = Moon (চাঁদ)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Sun column
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0x1FFFFFFF))
-                        .padding(14.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.WbSunny,
-                            contentDescription = "Sun",
-                            tint = Color(0xFFFFCA28),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.size(6.dp))
-                        Text(
-                            text = "সূর্য",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = "সূর্যোদয়",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = BanglaUtils.formatHourBengali(sunMoon?.sunrise ?: "০৫:৫০ পূর্বাহ্ন"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "সূর্যাস্ত",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = BanglaUtils.formatHourBengali(sunMoon?.sunset ?: "০৫:৪৫ অপরাহ্ন"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
-                }
-
-                // Moon column
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0x1FFFFFFF))
-                        .padding(14.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                if (sunMoon.sunrise != null || sunMoon.sunset != null) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0x1FFFFFFF))
+                            .padding(14.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Default.NightlightRound,
-                                contentDescription = "Moon",
-                                tint = Color(0xFFE0E0E0),
+                                imageVector = Icons.Default.WbSunny,
+                                contentDescription = "Sun",
+                                tint = Color(0xFFFFCA28),
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.size(6.dp))
                             Text(
-                                text = "চাঁদ",
+                                text = "সূর্য",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                         }
 
-                        // Moon phase badge
-                        val phaseBn = sunMoon?.moonPhaseBn ?: "কৃষ্ণপক্ষ"
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0x33FFFFFF))
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
+                        if (sunMoon.sunrise != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = phaseBn,
+                                text = "সূর্যোদয়",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFFE0E0E0),
-                                fontSize = 10.sp
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = BanglaUtils.formatHourBengali(sunMoon.sunrise),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
+
+                        if (sunMoon.sunset != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "সূর্যাস্ত",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = BanglaUtils.formatHourBengali(sunMoon.sunset),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
                             )
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                // Moon column
+                if (sunMoon.moonrise != null || sunMoon.moonset != null || sunMoon.moonPhaseBn != null) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0x1FFFFFFF))
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.NightlightRound,
+                                    contentDescription = "Moon",
+                                    tint = Color(0xFFE0E0E0),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.size(6.dp))
+                                Text(
+                                    text = "চাঁদ",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
 
-                    Text(
-                        text = "চন্দ্রোদয়",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = BanglaUtils.formatHourBengali(sunMoon?.moonrise ?: "০৬:২০ অপরাহ্ন"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
+                            if (!sunMoon.moonPhaseBn.isNullOrBlank()) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color(0x33FFFFFF))
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = sunMoon.moonPhaseBn,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color(0xFFE0E0E0),
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+                        }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        if (sunMoon.moonrise != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "চন্দ্রোদয়",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = BanglaUtils.formatHourBengali(sunMoon.moonrise),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
 
-                    Text(
-                        text = "চন্দ্রাস্ত",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = BanglaUtils.formatHourBengali(sunMoon?.moonset ?: "০৬:১০ পূর্বাহ্ন"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
+                        if (sunMoon.moonset != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "চন্দ্রাস্ত",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = BanglaUtils.formatHourBengali(sunMoon.moonset),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
+                    }
                 }
             }
         }

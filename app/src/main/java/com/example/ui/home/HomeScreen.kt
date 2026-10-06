@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,6 +52,7 @@ import com.example.data.model.UnifiedWeatherResponse
 import com.example.ui.components.AirQualitySection
 import com.example.ui.components.BangladeshDistrictPickerSheet
 import com.example.ui.components.HourlyForecastSection
+import com.example.ui.components.LocationHierarchyCard
 import com.example.ui.components.SunMoonSection
 import com.example.ui.components.TenDayForecastSection
 import com.example.ui.components.WeatherAlertsSection
@@ -72,7 +75,6 @@ fun HomeScreen(
     var isPickerOpen by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Runtime location permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -80,14 +82,6 @@ fun HomeScreen(
         val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
         if (fineGranted || coarseGranted) {
             viewModel.useGps()
-        } else {
-            viewModel.dismissLocationMessage()
-            // Clear Bengali message explaining how to enable permission
-            // Set message via ViewModel or snackbar directly
-            snackbarHostState.currentSnackbarData?.dismiss()
-            kotlinx.coroutines.MainScope().run {
-                // Snack showing Bengali rationale
-            }
         }
     }
 
@@ -101,12 +95,8 @@ fun HomeScreen(
     BangladeshDistrictPickerSheet(
         isOpen = isPickerOpen,
         onDismiss = { isPickerOpen = false },
-        onLocationSelected = { city ->
-            viewModel.selectCity(city)
-        },
-        onLocationItemSelected = { item ->
-            viewModel.selectLocationItem(item)
-        },
+        onLocationSelected = { city -> viewModel.selectCity(city) },
+        onLocationItemSelected = { item -> viewModel.selectLocationItem(item) },
         onUseLiveLocation = {
             permissionLauncher.launch(
                 arrayOf(
@@ -197,28 +187,30 @@ fun HomeScreen(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Text(
-                                    text = "BMD থেকে সর্বশেষ তথ্য পাওয়া যাচ্ছে না।",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
+                                    text = state.message.ifBlank { "আবহাওয়ার তথ্য লোড করা যায়নি।" },
+                                    style = MaterialTheme.typography.bodyLarge,
                                     color = Color.White,
                                     textAlign = TextAlign.Center
                                 )
-                                Text(
-                                    text = state.message,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.75f),
-                                    textAlign = TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
                                 Button(
                                     onClick = { viewModel.loadWeather(forceRefresh = true) },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.White,
-                                        contentColor = Color(0xFF0F3870)
+                                        containerColor = Color(0xFF81D4FA),
+                                        contentColor = Color(0xFF0D3268)
                                     ),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(14.dp),
+                                    modifier = Modifier.testTag("btn_retry_home")
                                 ) {
-                                    Text("পুনরায় চেষ্টা করুন", fontWeight = FontWeight.Bold)
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "পুনরায় চেষ্টা করুন",
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
                         }
@@ -231,7 +223,7 @@ fun HomeScreen(
                         tempUnit = state.userPreferences.temperatureUnit,
                         isRefreshing = isRefreshing,
                         isGpsLocating = isGpsLocating,
-                        isLiveLocationActive = state.isLiveGpsActive,
+                        isLiveLocationActive = isLiveLocation,
                         onOpenSearch = { isPickerOpen = true },
                         onUseGps = {
                             permissionLauncher.launch(
@@ -271,17 +263,23 @@ fun HomeContent(
         contentPadding = PaddingValues(top = 10.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Top Header: ☰ | 📍 Location Title | Date | Search trigger | "বর্তমান অবস্থান" button
+        // 1. Top Header: Location, Date, Search trigger & GPS trigger
         item {
             WeatherTopHeader(
                 location = weather.location,
                 isRefreshing = isRefreshing,
                 isGpsLocating = isGpsLocating,
                 isLiveLocationActive = isLiveLocationActive,
+                updatedAt = weather.updatedAt,
                 onOpenSearch = onOpenSearch,
                 onRefresh = onRefresh,
                 onUseGps = onUseGps
             )
+        }
+
+        // Administrative location details hierarchy chip if present
+        item {
+            LocationHierarchyCard(location = weather.location)
         }
 
         // Offline Cached Banner if offline
@@ -310,7 +308,7 @@ fun HomeContent(
             }
         }
 
-        // 2. Main Weather Hero Card (Large temp, condition, feels like, high/low, BMD station badge)
+        // 2. Weather Hero Card (Large temp, condition, feels like, min/max, BMD badge)
         item {
             WeatherHeroCard(
                 current = weather.current,
@@ -319,7 +317,7 @@ fun HomeContent(
             )
         }
 
-        // 3. Hourly Forecast ("পরবর্তী ২৪ ঘণ্টার পূর্বাভাস")
+        // 3. Hourly Forecast (24h)
         if (weather.hourly.isNotEmpty()) {
             item {
                 HourlyForecastSection(
@@ -329,7 +327,7 @@ fun HomeContent(
             }
         }
 
-        // 4. 10-Day Forecast ("১০ দিনের পূর্বাভাস")
+        // 4. Daily Forecast (10-Day)
         if (weather.daily.isNotEmpty()) {
             item {
                 TenDayForecastSection(
@@ -339,32 +337,46 @@ fun HomeContent(
             }
         }
 
-        // 5. Weather Metric Cards (2-column grid in Bengali: বাতাস, বায়ু চাপ, সম্ভাব্য বৃষ্টিপাত, অতিবেগুনী রশ্মি, আর্দ্রতা, দৃশ্যমানতা)
+        // 5. Weather Metrics Grid (Wind, Pressure, Rain, UV, Humidity, Visibility, Dew point, Cloud coverage, Wind gust)
         item {
             WeatherMetricsGridBengali(
                 windSpeedKmh = weather.current.windSpeed,
                 windDirectionDegrees = weather.current.windDirection,
+                windGustKmh = weather.current.windGust,
                 pressureHpa = weather.current.pressure,
                 rainfallMm = weather.current.rainfall ?: weather.current.precipitationMm,
+                rainProbability = weather.current.rainProbability,
                 uvIndex = weather.current.uvIndex,
                 humidity = weather.current.humidity,
-                visibilityMeters = weather.current.visibility
+                visibilityMeters = weather.current.visibility,
+                dewPointC = weather.current.dewPoint,
+                cloudCoverage = weather.current.cloudCoverage,
+                sunshineDuration = weather.current.sunshineDuration
             )
         }
 
-        // 6. Sun & Moon ("সূর্য ও চাঁদ")
+        // 5.1 Rain Prediction Bulletin (if provided by backend)
+        if (weather.rainPrediction != null) {
+            item {
+                com.example.ui.components.RainPredictionSection(rainPrediction = weather.rainPrediction)
+            }
+        }
+
+        // 6. Air Quality (AQI, PM2.5, PM10, etc.)
+        if (weather.airQuality != null && weather.airQuality.aqi != null) {
+            item {
+                AirQualitySection(airQuality = weather.airQuality)
+            }
+        }
+
+        // 7. Sun & Moon (Sunrise, Sunset, Moonrise, Moonset)
         if (weather.sunMoon != null) {
             item {
                 SunMoonSection(sunMoon = weather.sunMoon)
             }
         }
 
-        // 7. Air Quality ("বাতাসের গুণগত মান")
-        item {
-            AirQualitySection(airQuality = weather.airQuality)
-        }
-
-        // 8. Weather Alerts ("এইরূপ আবহাওয়ায় করণীয়")
+        // 8. Weather Alerts & Bulletins
         item {
             val allWarnings = if (weather.warnings.isNotEmpty()) weather.warnings else weather.alerts
             WeatherAlertsSection(
@@ -372,13 +384,5 @@ fun HomeContent(
                 onNavigateToAlerts = onNavigateToAlerts
             )
         }
-    }
-}
-
-fun formatTemp(celsius: Double?, unit: TemperatureUnit): String {
-    if (celsius == null) return "--"
-    return when (unit) {
-        TemperatureUnit.CELSIUS -> "%.0f°C".format(celsius)
-        TemperatureUnit.FAHRENHEIT -> "%.0f°F".format(celsius * 9 / 5 + 32)
     }
 }

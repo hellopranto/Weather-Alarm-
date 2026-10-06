@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -74,7 +72,7 @@ fun WeatherAlertsSection(
                     )
                 }
                 Text(
-                    text = "এইরূপ আবহাওয়ায় করণীয়",
+                    text = "আবহাওয়া সতর্কতা ও বুলেটিন",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -95,7 +93,7 @@ fun WeatherAlertsSection(
                         modifier = Modifier.size(22.dp)
                     )
                     Text(
-                        text = "বর্তমান আবহাওয়ার পরিস্থিতির জন্য কোনো সতর্কবার্তা নেই।",
+                        text = "বর্তমানে কোনো সক্রিয় আবহাওয়া সতর্কতা নেই।",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.85f)
                     )
@@ -113,6 +111,15 @@ fun WeatherAlertsSection(
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFFFCC80)
                         )
+                        if (!warning.area.isNullOrBlank() || warning.regions.isNotEmpty()) {
+                            val regionsText = warning.area ?: warning.regions.joinToString(", ")
+                            Text(
+                                text = "প্রভাবিত এলাকা: $regionsText",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF81D4FA),
+                                fontSize = 11.sp
+                            )
+                        }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = warning.descriptionBn ?: warning.description,
@@ -120,6 +127,15 @@ fun WeatherAlertsSection(
                             color = Color.White.copy(alpha = 0.85f),
                             maxLines = 3
                         )
+                        if (!warning.instructions.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "পরামর্শ: ${warning.instructions}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFFFD54F),
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 }
             }

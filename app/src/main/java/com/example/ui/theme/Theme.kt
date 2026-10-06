@@ -1,88 +1,48 @@
 package com.example.ui.theme
 
-import android.os.Build
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalContext
-import com.example.data.local.ThemeMode
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = WeatherPrimaryDark,
-    onPrimary = WeatherOnPrimaryDark,
-    primaryContainer = WeatherPrimaryContainerDark,
-    onPrimaryContainer = WeatherOnPrimaryContainerDark,
-    secondary = WeatherSecondaryDark,
-    onSecondary = WeatherOnSecondaryDark,
-    secondaryContainer = WeatherSecondaryContainerDark,
-    onSecondaryContainer = WeatherOnSecondaryContainerDark,
-    tertiary = WeatherTertiaryDark,
-    onTertiary = WeatherOnTertiaryDark,
-    tertiaryContainer = WeatherTertiaryContainerDark,
-    onTertiaryContainer = WeatherOnTertiaryContainerDark,
-    background = WeatherBackgroundDark,
-    onBackground = WeatherOnBackgroundDark,
-    surface = WeatherSurfaceDark,
-    onSurface = WeatherOnSurfaceDark,
-    surfaceVariant = WeatherSurfaceVariantDark,
-    onSurfaceVariant = WeatherOnSurfaceVariantDark
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = WeatherPrimaryLight,
-    onPrimary = WeatherOnPrimaryLight,
-    primaryContainer = WeatherPrimaryContainerLight,
-    onPrimaryContainer = WeatherOnPrimaryContainerLight,
-    secondary = WeatherSecondaryLight,
-    onSecondary = WeatherOnSecondaryLight,
-    secondaryContainer = WeatherSecondaryContainerLight,
-    onSecondaryContainer = WeatherOnSecondaryContainerLight,
-    tertiary = WeatherTertiaryLight,
-    onTertiary = WeatherOnTertiaryLight,
-    tertiaryContainer = WeatherTertiaryContainerLight,
-    onTertiaryContainer = WeatherOnTertiaryContainerLight,
-    background = WeatherBackgroundLight,
-    onBackground = WeatherOnBackgroundLight,
-    surface = WeatherSurfaceLight,
-    onSurface = WeatherOnSurfaceLight,
-    surfaceVariant = WeatherSurfaceVariantLight,
-    onSurfaceVariant = WeatherOnSurfaceVariantLight
+    primary = LightBlueAccent,
+    secondary = RoyalBlueSecondary,
+    tertiary = SunnyYellow,
+    background = DeepNavyDark,
+    surface = DarkNavyPrimary,
+    onPrimary = Color.Black,
+    onSecondary = Color.White,
+    onBackground = Color.White,
+    onSurface = Color.White
 )
 
 @Composable
-fun MyApplicationTheme(
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
-    dynamicColor: Boolean = false, // Weather app should showcase curated atmospheric blues
+fun WeatherTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val darkTheme = when (themeMode) {
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-    }
-
-    val context = LocalContext.current
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val colorScheme = DarkColorScheme
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                window.statusBarColor = Color(0xFF0D3268).toArgb()
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            }
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography
-    ) {
-        CompositionLocalProvider(
-            LocalTextStyle provides MaterialTheme.typography.bodyLarge.copy(fontFamily = AnekBanglaFontFamily),
-            content = content
-        )
-    }
+        typography = Typography,
+        content = content
+    )
 }

@@ -1,28 +1,19 @@
 package com.example.navigation
 
-import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Radar
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.R
 
-sealed class Screen(
-    val route: String,
-    @StringRes val titleRes: Int,
-    val icon: ImageVector,
-    val testTag: String
-) {
-    data object Home : Screen("home", R.string.nav_home, Icons.Filled.Home, "nav_item_home")
-    data object Hourly : Screen("hourly", R.string.nav_hourly, Icons.Filled.Schedule, "nav_item_hourly")
-    data object Radar : Screen("radar", R.string.nav_radar, Icons.Filled.Radar, "nav_item_radar")
-    data object Alerts : Screen("alerts", R.string.nav_alerts, Icons.Filled.NotificationsActive, "nav_item_alerts")
-    data object Settings : Screen("settings", R.string.nav_settings, Icons.Filled.Settings, "nav_item_settings")
-
-    companion object {
-        val bottomNavItems = listOf(Home, Hourly, Radar, Alerts, Settings)
-    }
+sealed class Screen(val route: String, val titleBn: String, val icon: ImageVector) {
+    data object Home : Screen("home", "হোম", Icons.Default.WbSunny)
+    data object Hourly : Screen("hourly", "২৪ ঘণ্টা", Icons.Default.HourglassTop)
+    data object Radar : Screen("radar", "রাডার", Icons.Default.Map)
+    data object Stations : Screen("stations", "স্টেশন", Icons.Default.Sensors)
+    data object Alerts : Screen("alerts", "সতর্কতা", Icons.Default.NotificationsActive)
+    data object Settings : Screen("settings", "সেটিংস", Icons.Default.Settings)
 }

@@ -16,18 +16,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-sealed interface WeatherUiState {
-    data object Loading : WeatherUiState
+sealed class WeatherUiState {
+    data object Loading : WeatherUiState()
     data class Success(
         val data: UnifiedWeatherResponse,
         val isOfflineCached: Boolean = false,
         val userPreferences: UserPreferences,
         val isLiveGpsActive: Boolean = false
-    ) : WeatherUiState
+    ) : WeatherUiState()
     data class Error(
         val message: String,
         val cachedData: UnifiedWeatherResponse? = null
-    ) : WeatherUiState
+    ) : WeatherUiState()
 }
 
 class HomeViewModel(
@@ -45,7 +45,7 @@ class HomeViewModel(
     private val _isGpsLocating = MutableStateFlow(false)
     val isGpsLocating: StateFlow<Boolean> = _isGpsLocating.asStateFlow()
 
-    private val _isLiveLocation = MutableStateFlow(true)
+    private val _isLiveLocation = MutableStateFlow(false)
     val isLiveLocation: StateFlow<Boolean> = _isLiveLocation.asStateFlow()
 
     private val _locationMessage = MutableStateFlow<String?>(null)
@@ -65,21 +65,19 @@ class HomeViewModel(
             val prefs = preferencesRepository.userPreferencesFlow.first()
             _isLiveLocation.value = prefs.useGpsLocation
 
-            var targetLat = prefs.selectedLatitude
-            var targetLon = prefs.selectedLongitude
-            var targetCity = prefs.selectedCityName
-
-            // If user previously set GPS as active, verify device location
-            if (prefs.useGpsLocation && locationTracker.hasLocationPermission()) {
+            if (locationTracker.hasLocationPermission()) {
                 val loc = locationTracker.getCurrentLocation()
                 if (loc != null) {
-                    targetLat = loc.latitude
-                    targetLon = loc.longitude
-                    targetCity = "" // Instructs backend to reverse-geocode
+                    _isLiveLocation.value = true
+                    fetchWeather(loc.latitude, loc.longitude, "", isGps = true, forceRefresh = true)
+                    return@launch
                 }
             }
 
-            fetchWeather(targetLat, targetLon, targetCity, isGps = prefs.useGpsLocation, forceRefresh = true)
+            // Fallback to user's saved location coordinates if GPS is not yet acquired
+            val targetLat = if (prefs.selectedLatitude != 0.0) prefs.selectedLatitude else 23.8103
+            val targetLon = if (prefs.selectedLongitude != 0.0) prefs.selectedLongitude else 90.4125
+            fetchWeather(targetLat, targetLon, prefs.selectedCityName, isGps = false, forceRefresh = false)
         }
     }
 
@@ -102,7 +100,6 @@ class HomeViewModel(
                         )
                         _isRefreshing.value = false
 
-                        // Remember the successfully resolved location
                         val resolvedName = resource.data.location.displayName
                             ?: resource.data.location.name.ifBlank { cityName }
                         preferencesRepository.setSelectedLocation(
@@ -113,8 +110,8 @@ class HomeViewModel(
                         )
                     }
                     is Resource.Error -> {
+                        val cached = weatherRepository.getCachedWeather(lat, lon)
                         if (_uiState.value !is WeatherUiState.Success) {
-                            val cached = weatherRepository.getCachedWeather(lat, lon)
                             _uiState.value = WeatherUiState.Error(
                                 message = resource.message,
                                 cachedData = cached
@@ -132,12 +129,12 @@ class HomeViewModel(
     fun loadWeather(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             val prefs = preferencesRepository.userPreferencesFlow.first()
-            if (prefs.useGpsLocation) {
+            if (prefs.useGpsLocation && locationTracker.hasLocationPermission()) {
                 useGps()
             } else {
                 fetchWeather(
-                    prefs.selectedLatitude,
-                    prefs.selectedLongitude,
+                    prefs.selectedLatitude.let { if (it != 0.0) it else 23.8103 },
+                    prefs.selectedLongitude.let { if (it != 0.0) it else 90.4125 },
                     prefs.selectedCityName,
                     isGps = false,
                     forceRefresh = forceRefresh
@@ -149,7 +146,6 @@ class HomeViewModel(
     fun checkLocationAndUpdate(forceRefresh: Boolean = true) {
         loadWeather(forceRefresh)
     }
-
 
     fun selectLocationItem(item: LocationItem) {
         viewModelScope.launch {
@@ -205,7 +201,7 @@ class HomeViewModel(
                 fetchWeather(loc.latitude, loc.longitude, "", isGps = true, forceRefresh = true)
             } else {
                 _isRefreshing.value = false
-                _locationMessage.value = "জিপিএস অবস্থান সনাক্ত করতে সময় শেষ হয়েছে। পূর্ববর্তী সংরক্ষিত অবস্থান রাখা হয়েছে।"
+                _locationMessage.value = "জিপিএস অবস্থান সনাক্ত করতে সমস্যা হয়েছে। পূর্ববর্তী সংরক্ষিত অবস্থান রাখা হয়েছে।"
             }
         }
     }

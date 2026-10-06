@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,10 +21,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sensors
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,6 +52,7 @@ fun WeatherTopHeader(
     isRefreshing: Boolean,
     isGpsLocating: Boolean,
     isLiveLocationActive: Boolean = false,
+    updatedAt: String? = null,
     onOpenSearch: () -> Unit,
     onRefresh: () -> Unit,
     onUseGps: () -> Unit,
@@ -61,11 +61,31 @@ fun WeatherTopHeader(
     val locationTitle = when {
         !location.displayName.isNullOrBlank() -> location.displayName
         !location.upazila.isNullOrBlank() && !location.district.isNullOrBlank() -> "${location.upazila}, ${location.district}"
+        !location.district.isNullOrBlank() -> location.district
         location.name.isNotBlank() -> location.name
-        else -> "কুড়িগ্রাম সদর, কুড়িগ্রাম"
+        location.latitude != 0.0 -> "অক্ষাংশ: ${BanglaUtils.toBanglaDigits(location.latitude)}, দ্রাঘিমাংশ: ${BanglaUtils.toBanglaDigits(location.longitude)}"
+        else -> "বাংলাদেশ"
     }
 
     val dateSubtitle = BanglaUtils.getTodayBengaliDateString()
+    val headerSubtitle = if (!updatedAt.isNullOrBlank()) {
+        try {
+            val cleanStr = if (updatedAt.contains(".")) updatedAt.substringBefore(".") else updatedAt.substringBefore("Z")
+            val isoParser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+            isoParser.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            val date = isoParser.parse(cleanStr)
+            if (date != null) {
+                val localTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US).format(date)
+                "$dateSubtitle • ${BanglaUtils.formatHourBengali(localTime)}"
+            } else {
+                dateSubtitle
+            }
+        } catch (_: Exception) {
+            dateSubtitle
+        }
+    } else {
+        dateSubtitle
+    }
 
     Column(
         modifier = modifier
@@ -89,7 +109,7 @@ fun WeatherTopHeader(
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu / Search",
+                    contentDescription = "Search / Menu",
                     tint = Color.White
                 )
             }
@@ -113,7 +133,7 @@ fun WeatherTopHeader(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "📍 $locationTitle",
+                        text = locationTitle,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -126,7 +146,7 @@ fun WeatherTopHeader(
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = dateSubtitle,
+                    text = headerSubtitle,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = Color.White.copy(alpha = 0.85f),
@@ -141,76 +161,39 @@ fun WeatherTopHeader(
                     .size(42.dp)
                     .clip(CircleShape)
                     .background(Color(0x2BFFFFFF))
-                    .testTag("btn_refresh_weather")
+                    .testTag("btn_refresh_top")
             ) {
                 if (isRefreshing) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp,
-                        color = Color.White
+                        color = Color.White,
+                        modifier = Modifier.size(18.dp)
                     )
                 } else {
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = "Refresh",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        tint = Color.White
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Search Bar Trigger & Current Location Button
+        // Action row: Live GPS Indicator / Switcher + Search trigger
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // "🔍 স্থান খুঁজুন" Quick Bar
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0x29FFFFFF))
-                    .clickable { onOpenSearch() }
-                    .padding(horizontal = 12.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = Color.White.copy(alpha = 0.85f),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = "স্থান খুঁজুন (যেমন: নাগেশ্বরী শহর)",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.75f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            // "বর্তমান অবস্থান" (GPS) Button
-            Button(
-                onClick = onUseGps,
-                enabled = !isGpsLocating,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isLiveLocationActive) Color(0xFF1976D2) else Color(0x33FFFFFF),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier
-                    .height(44.dp)
-                    .testTag("btn_current_location_action")
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (isLiveLocationActive) Color(0x334CAF50) else Color(0x2BFFFFFF))
+                    .clickable { onUseGps() }
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .testTag("btn_quick_live_gps")
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -218,22 +201,80 @@ fun WeatherTopHeader(
                 ) {
                     if (isGpsLocating) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = Color.White
+                            color = Color(0xFF81D4FA),
+                            modifier = Modifier.size(14.dp)
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Default.MyLocation,
-                            contentDescription = "Live Location",
-                            modifier = Modifier.size(16.dp)
+                            contentDescription = null,
+                            tint = if (isLiveLocationActive) Color(0xFF81C784) else Color(0xFF81D4FA),
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                     Text(
-                        text = "বর্তমান অবস্থান",
+                        text = if (isLiveLocationActive) "লাইভ GPS অবস্থান সক্রিয়" else "বর্তমান অবস্থান (GPS)",
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
                     )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun LocationHierarchyCard(
+    location: LocationModel,
+    modifier: Modifier = Modifier
+) {
+    val items = mutableListOf<Pair<String, String>>()
+    if (!location.village.isNullOrBlank()) items.add("গ্রাম" to location.village)
+    if (!location.union.isNullOrBlank()) items.add("ইউনিয়ন" to location.union)
+    if (!location.upazila.isNullOrBlank()) items.add("উপজেলা" to location.upazila)
+    if (!location.district.isNullOrBlank()) items.add("জেলা" to location.district)
+    if (!location.division.isNullOrBlank()) items.add("বিভাগ" to location.division)
+    if (!location.country.isNullOrBlank()) items.add("দেশ" to location.country)
+    if (location.latitude != 0.0 && location.longitude != 0.0) {
+        items.add("স্থানাঙ্ক" to "${BanglaUtils.toBanglaDigits(location.latitude)}° N, ${BanglaUtils.toBanglaDigits(location.longitude)}° E")
+    }
+
+    if (items.isEmpty()) return
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0x22102A4E))
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = "প্রশাসনিক অবস্থান বিবরণ",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF81D4FA)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items.forEach { (label, value) ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0x26FFFFFF))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "$label: $value",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 11.sp
+                        )
+                    }
                 }
             }
         }
@@ -266,7 +307,6 @@ fun WeatherHeroCard(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Weather Icon + Condition
             WeatherConditionIcon(
                 weatherCode = current.weatherCode,
                 size = 72.dp
@@ -274,7 +314,6 @@ fun WeatherHeroCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Large Temperature Display (72sp Anek Bangla Bold)
             Text(
                 text = tempText,
                 fontFamily = com.example.ui.theme.AnekBanglaFontFamily,
@@ -285,8 +324,6 @@ fun WeatherHeroCard(
                 modifier = Modifier.testTag("hero_temperature_text")
             )
 
-
-            // Feels Like Temperature
             if (feelsLikeText.isNotBlank()) {
                 Text(
                     text = feelsLikeText,
@@ -298,7 +335,6 @@ fun WeatherHeroCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Weather Condition Text
             Text(
                 text = conditionText,
                 style = MaterialTheme.typography.headlineSmall,
@@ -306,7 +342,6 @@ fun WeatherHeroCard(
                 color = Color(0xFFE1F5FE)
             )
 
-            // High / Low Indicators
             if (current.tempMax != null || current.tempMin != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 val high = BanglaUtils.formatTemp(current.tempMax, tempUnit)
@@ -321,7 +356,7 @@ fun WeatherHeroCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // BMD Data Source / "আমার পর্যবেক্ষণ" Badge
+            // BMD Data Source badge
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
@@ -340,10 +375,13 @@ fun WeatherHeroCard(
                     )
 
                     val sourceText = if (station != null && station.name.isNotBlank()) {
-                        val distStr = BanglaUtils.toBanglaDigits(station.distanceKm)
-                        "BMD ${station.name} (${station.code}) • $distStr কিমি দূরে"
+                        val cleanName = formatStationName(station.name)
+                        val absDistance = kotlin.math.abs(station.distanceKm)
+                        val distStr = BanglaUtils.toBanglaDigits(absDistance)
+                        val codeStr = if (station.code.isNotBlank()) " (${station.code})" else ""
+                        "BMD $cleanName$codeStr • $distStr কিমি দূরে"
                     } else {
-                        "আমার পর্যবেক্ষণ • BMD স্টেশন"
+                        "BMD পর্যবেক্ষণ স্টেশন"
                     }
 
                     Text(
@@ -356,5 +394,46 @@ fun WeatherHeroCard(
                 }
             }
         }
+    }
+}
+
+fun formatStationName(rawName: String): String {
+    val clean = rawName
+        .replace(",yes", "", ignoreCase = true)
+        .replace(",no", "", ignoreCase = true)
+        .replace("_", " ")
+        .trim()
+    return when {
+        clean.contains("Cox", ignoreCase = true) -> "কক্সবাজার"
+        clean.contains("Dhaka", ignoreCase = true) -> "ঢাকা"
+        clean.contains("Chattogram", ignoreCase = true) || clean.contains("Chittagong", ignoreCase = true) -> "চট্টগ্রাম"
+        clean.contains("Sylhet", ignoreCase = true) -> "সিলেট"
+        clean.contains("Rajshahi", ignoreCase = true) -> "রাজশাহী"
+        clean.contains("Khulna", ignoreCase = true) -> "খুলনা"
+        clean.contains("Barishal", ignoreCase = true) || clean.contains("Barisal", ignoreCase = true) -> "বরিশাল"
+        clean.contains("Rangpur", ignoreCase = true) -> "রংপুর"
+        clean.contains("Mymensingh", ignoreCase = true) -> "ময়মনসিংহ"
+        clean.contains("Bogura", ignoreCase = true) || clean.contains("Bogra", ignoreCase = true) -> "বগুড়া"
+        clean.contains("Teknaf", ignoreCase = true) -> "টেকনাফ"
+        clean.contains("Sreemangal", ignoreCase = true) -> "শ্রীমঙ্গল"
+        clean.contains("Satkhira", ignoreCase = true) -> "সাতক্ষীরা"
+        clean.contains("Mongla", ignoreCase = true) -> "মোংলা"
+        clean.contains("Patuakhali", ignoreCase = true) -> "পটুয়াখালী"
+        clean.contains("Bhola", ignoreCase = true) -> "ভোলা"
+        clean.contains("Feni", ignoreCase = true) -> "ফেনী"
+        clean.contains("Cumilla", ignoreCase = true) || clean.contains("Comilla", ignoreCase = true) -> "কুমিল্লা"
+        clean.contains("Chandpur", ignoreCase = true) -> "চাঁদপুর"
+        clean.contains("Noakhali", ignoreCase = true) || clean.contains("Maijdee", ignoreCase = true) -> "নোয়াখালী"
+        clean.contains("Tangail", ignoreCase = true) -> "টাঙ্গাইল"
+        clean.contains("Faridpur", ignoreCase = true) -> "ফরিদপুর"
+        clean.contains("Madaripur", ignoreCase = true) -> "মাদারীপুর"
+        clean.contains("Sandwip", ignoreCase = true) -> "সন্দ্বীপ"
+        clean.contains("Hatiya", ignoreCase = true) -> "হাতিয়া"
+        clean.contains("Kutubdia", ignoreCase = true) -> "কুতুবদিয়া"
+        clean.contains("Dinajpur", ignoreCase = true) -> "দিনাজপুর"
+        clean.contains("Jessore", ignoreCase = true) || clean.contains("Jashore", ignoreCase = true) -> "যশোর"
+        clean.contains("Kushtia", ignoreCase = true) -> "কুষ্টিয়া"
+        clean.contains("Kurigram", ignoreCase = true) -> "কুড়িগ্রাম"
+        else -> clean
     }
 }

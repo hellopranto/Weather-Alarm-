@@ -50,9 +50,7 @@ fun HourlyForecastSection(
             .fillMaxWidth()
             .testTag("hourly_forecast_card"),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0x33102A4E)
-        )
+        colors = CardDefaults.cardColors(containerColor = Color(0x33102A4E))
     ) {
         Column(
             modifier = Modifier
@@ -111,13 +109,12 @@ fun HourlyItemCardBengali(
 ) {
     Column(
         modifier = modifier
-            .width(86.dp)
+            .width(88.dp)
             .clip(RoundedCornerShape(18.dp))
             .background(Color(0x24FFFFFF))
             .padding(vertical = 12.dp, horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Date or "আজ"
         if (item.dateString != null) {
             Text(
                 text = BanglaUtils.toBanglaDigits(item.dateString),
@@ -128,7 +125,6 @@ fun HourlyItemCardBengali(
             Spacer(modifier = Modifier.height(2.dp))
         }
 
-        // Time
         Text(
             text = BanglaUtils.formatHourBengali(item.timeString),
             style = MaterialTheme.typography.bodySmall,
@@ -146,7 +142,6 @@ fun HourlyItemCardBengali(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Temperature
         Text(
             text = BanglaUtils.formatTemp(item.temperature, tempUnit),
             style = MaterialTheme.typography.titleMedium,
@@ -156,45 +151,46 @@ fun HourlyItemCardBengali(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Rain Probability
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.WaterDrop,
-                contentDescription = null,
-                tint = Color(0xFF64B5F6),
-                modifier = Modifier.size(12.dp)
-            )
-            Text(
-                text = "${BanglaUtils.toBanglaDigits(item.rainProbability)}%",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF90CAF9),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp
-            )
+        if (item.rainProbability > 0) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.WaterDrop,
+                    contentDescription = null,
+                    tint = Color(0xFF64B5F6),
+                    modifier = Modifier.size(12.dp)
+                )
+                Text(
+                    text = "${BanglaUtils.toBanglaDigits(item.rainProbability)}%",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF90CAF9),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // Wind speed
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Air,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.6f),
-                modifier = Modifier.size(12.dp)
-            )
-            Text(
-                text = "${BanglaUtils.toBanglaDigits(item.windSpeed.toInt())} কিমি/ঘ",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 10.sp
-            )
+        if (item.windSpeed > 0) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Air,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.6f),
+                    modifier = Modifier.size(12.dp)
+                )
+                Text(
+                    text = "${BanglaUtils.toBanglaDigits(item.windSpeed.toInt())} কিমি/ঘ",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 10.sp
+                )
+            }
         }
     }
 }

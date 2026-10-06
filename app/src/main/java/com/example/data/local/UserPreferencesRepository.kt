@@ -11,111 +11,70 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_weather_settings")
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_weather_preferences")
 
-enum class TemperatureUnit(val symbol: String) {
-    CELSIUS("°C"),
-    FAHRENHEIT("°F")
-}
-
-enum class WindUnit(val label: String) {
-    KMH("km/h"),
-    MS("m/s"),
-    MPH("mph")
-}
-
-enum class ThemeMode {
-    SYSTEM,
-    LIGHT,
-    DARK
+enum class TemperatureUnit {
+    CELSIUS, FAHRENHEIT
 }
 
 data class UserPreferences(
-    val language: String = "bn", // Default to Bengali as per Bangladesh focus
-    val temperatureUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
-    val windUnit: WindUnit = WindUnit.KMH,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val selectedCityName: String = "",
+    val selectedLatitude: Double = 0.0,
+    val selectedLongitude: Double = 0.0,
     val useGpsLocation: Boolean = true,
-    val selectedCityName: String = "Dhaka",
-    val selectedLatitude: Double = 23.8103,
-    val selectedLongitude: Double = 90.4125
+    val temperatureUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
+    val notificationsEnabled: Boolean = true
 )
 
 class UserPreferencesRepository(private val context: Context) {
-    private val prefLanguage = stringPreferencesKey("app_language")
-    private val prefTempUnit = stringPreferencesKey("temp_unit")
-    private val prefWindUnit = stringPreferencesKey("wind_unit")
-    private val prefThemeMode = stringPreferencesKey("theme_mode")
-    private val prefUseGps = booleanPreferencesKey("use_gps")
     private val prefCityName = stringPreferencesKey("selected_city_name")
     private val prefLatitude = doublePreferencesKey("selected_latitude")
     private val prefLongitude = doublePreferencesKey("selected_longitude")
+    private val prefUseGps = booleanPreferencesKey("use_gps_location")
+    private val prefTempUnit = stringPreferencesKey("temperature_unit")
+    private val prefNotifications = booleanPreferencesKey("notifications_enabled")
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data.map { preferences ->
-        val lang = preferences[prefLanguage] ?: "bn"
-        val temp = when (preferences[prefTempUnit]) {
-            "F" -> TemperatureUnit.FAHRENHEIT
-            else -> TemperatureUnit.CELSIUS
-        }
-        val wind = when (preferences[prefWindUnit]) {
-            "ms" -> WindUnit.MS
-            "mph" -> WindUnit.MPH
-            else -> WindUnit.KMH
-        }
-        val theme = when (preferences[prefThemeMode]) {
-            "LIGHT" -> ThemeMode.LIGHT
-            "DARK" -> ThemeMode.DARK
-            else -> ThemeMode.SYSTEM
-        }
+        val cityName = preferences[prefCityName] ?: ""
+        val lat = preferences[prefLatitude] ?: 0.0
+        val lon = preferences[prefLongitude] ?: 0.0
         val useGps = preferences[prefUseGps] ?: true
-        val city = preferences[prefCityName] ?: "Dhaka"
-        val lat = preferences[prefLatitude] ?: 23.8103
-        val lon = preferences[prefLongitude] ?: 90.4125
+        val tempUnitStr = preferences[prefTempUnit] ?: TemperatureUnit.CELSIUS.name
+        val tempUnit = try {
+            TemperatureUnit.valueOf(tempUnitStr)
+        } catch (_: Exception) {
+            TemperatureUnit.CELSIUS
+        }
+        val notifications = preferences[prefNotifications] ?: true
 
         UserPreferences(
-            language = lang,
-            temperatureUnit = temp,
-            windUnit = wind,
-            themeMode = theme,
-            useGpsLocation = useGps,
-            selectedCityName = city,
+            selectedCityName = cityName,
             selectedLatitude = lat,
-            selectedLongitude = lon
+            selectedLongitude = lon,
+            useGpsLocation = useGps,
+            temperatureUnit = tempUnit,
+            notificationsEnabled = notifications
         )
     }
 
-    suspend fun setLanguage(languageCode: String) {
-        context.dataStore.edit { it[prefLanguage] = languageCode }
-    }
-
-    suspend fun setTemperatureUnit(unit: TemperatureUnit) {
-        context.dataStore.edit { it[prefTempUnit] = if (unit == TemperatureUnit.FAHRENHEIT) "F" else "C" }
-    }
-
-    suspend fun setWindUnit(unit: WindUnit) {
-        context.dataStore.edit {
-            it[prefWindUnit] = when (unit) {
-                WindUnit.MS -> "ms"
-                WindUnit.MPH -> "mph"
-                WindUnit.KMH -> "kmh"
-            }
+    suspend fun setSelectedLocation(name: String, lat: Double, lon: Double, useGps: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[prefCityName] = name
+            preferences[prefLatitude] = lat
+            preferences[prefLongitude] = lon
+            preferences[prefUseGps] = useGps
         }
     }
 
-    suspend fun setThemeMode(mode: ThemeMode) {
-        context.dataStore.edit { it[prefThemeMode] = mode.name }
+    suspend fun setTemperatureUnit(unit: TemperatureUnit) {
+        context.dataStore.edit { preferences ->
+            preferences[prefTempUnit] = unit.name
+        }
     }
 
-    suspend fun setUseGpsLocation(useGps: Boolean) {
-        context.dataStore.edit { it[prefUseGps] = useGps }
-    }
-
-    suspend fun setSelectedLocation(name: String, lat: Double, lon: Double, useGps: Boolean = false) {
-        context.dataStore.edit {
-            it[prefCityName] = name
-            it[prefLatitude] = lat
-            it[prefLongitude] = lon
-            it[prefUseGps] = useGps
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[prefNotifications] = enabled
         }
     }
 }

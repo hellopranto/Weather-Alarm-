@@ -1,91 +1,80 @@
 package com.example.location
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 class DefaultLocationTracker(
-    private val context: Context,
-    private val client: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
+    private val locationClient: FusedLocationProviderClient,
+    private val context: Context
 ) : LocationTracker {
 
     override fun hasLocationPermission(): Boolean {
-        val finePermission = ContextCompat.checkSelfPermission(
+        val fineGranted = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-        val coarsePermission = ContextCompat.checkSelfPermission(
+        val coarseGranted = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-        return finePermission || coarsePermission
+        return fineGranted || coarseGranted
     }
 
+    @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(): Location? {
-        if (!hasLocationPermission()) {
-            return null
-        }
+        if (!hasLocationPermission()) return null
 
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-        val isGpsEnabled = locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) ?: false
-        val isNetworkEnabled = locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ?: false
+        val isGpsEnabled = locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true
+        val isNetworkEnabled = locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true
+        if (!isGpsEnabled && !isNetworkEnabled) return null
 
-        if (!isGpsEnabled && !isNetworkEnabled) {
-            return null
-        }
+        val cancellationTokenSource = CancellationTokenSource()
 
-        return withTimeoutOrNull(9000L) {
-            suspendCancellableCoroutine { continuation ->
-                val cancellationTokenSource = CancellationTokenSource()
-
-                try {
-                    client.getCurrentLocation(
-                        Priority.PRIORITY_HIGH_ACCURACY,
-                        cancellationTokenSource.token
-                    ).addOnSuccessListener { location ->
-                        if (location != null) {
-                            if (continuation.isActive) continuation.resume(location)
-                        } else {
-                            try {
-                                client.lastLocation.addOnSuccessListener { lastLoc ->
-                                    if (continuation.isActive) continuation.resume(lastLoc)
-                                }.addOnFailureListener {
-                                    if (continuation.isActive) continuation.resume(null)
-                                }
-                            } catch (_: SecurityException) {
-                                if (continuation.isActive) continuation.resume(null)
+        return suspendCancellableCoroutine { continuation ->
+            locationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                cancellationTokenSource.token
+            ).addOnSuccessListener { location ->
+                if (continuation.isActive) {
+                    if (location != null) {
+                        continuation.resume(location)
+                    } else {
+                        // Fallback to last known location if getCurrentLocation returned null
+                        locationClient.lastLocation.addOnSuccessListener { lastLoc ->
+                            if (continuation.isActive) {
+                                continuation.resume(lastLoc)
+                            }
+                        }.addOnFailureListener {
+                            if (continuation.isActive) {
+                                continuation.resume(null)
                             }
                         }
-                    }.addOnFailureListener {
-                        try {
-                            client.lastLocation.addOnSuccessListener { lastLoc ->
-                                if (continuation.isActive) continuation.resume(lastLoc)
-                            }.addOnFailureListener {
-                                if (continuation.isActive) continuation.resume(null)
-                            }
-                        } catch (_: SecurityException) {
-                            if (continuation.isActive) continuation.resume(null)
-                        }
-                    }.addOnCanceledListener {
-                        if (continuation.isActive) continuation.cancel()
                     }
-                } catch (_: SecurityException) {
-                    if (continuation.isActive) continuation.resume(null)
                 }
+            }.addOnFailureListener {
+                if (continuation.isActive) {
+                    // Try lastLocation as backup
+                    locationClient.lastLocation.addOnSuccessListener { lastLoc ->
+                        if (continuation.isActive) continuation.resume(lastLoc)
+                    }.addOnFailureListener {
+                        if (continuation.isActive) continuation.resume(null)
+                    }
+                }
+            }
 
-                continuation.invokeOnCancellation {
-                    cancellationTokenSource.cancel()
-                }
+            continuation.invokeOnCancellation {
+                cancellationTokenSource.cancel()
             }
         }
     }

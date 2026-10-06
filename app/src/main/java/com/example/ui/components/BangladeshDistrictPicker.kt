@@ -13,9 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -35,7 +33,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -83,7 +80,7 @@ fun BangladeshDistrictPickerSheet(
             isSearching = false
         } else {
             isSearching = true
-            delay(280) // Debounce typing
+            delay(250)
             searchResults = locationService.searchLocations(searchQuery)
             isSearching = false
         }
@@ -100,7 +97,6 @@ fun BangladeshDistrictPickerSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 28.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -119,7 +115,6 @@ fun BangladeshDistrictPickerSheet(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -127,7 +122,7 @@ fun BangladeshDistrictPickerSheet(
                     .fillMaxWidth()
                     .testTag("location_search_input"),
                 placeholder = {
-                    Text(text = "স্থান খুঁজুন (যেমন: নাগেশ্বরী শহর, কুড়িগ্রাম)")
+                    Text(text = "স্থান খুঁজুন (যেমন: নাগেশ্বরী, কুড়িগ্রাম, সিলেট)")
                 },
                 leadingIcon = {
                     Icon(
@@ -153,7 +148,6 @@ fun BangladeshDistrictPickerSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // "বর্তমান অবস্থান ব্যবহার করুন" Button
             if (onUseLiveLocation != null) {
                 Button(
                     onClick = {
@@ -178,109 +172,51 @@ fun BangladeshDistrictPickerSheet(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.MyLocation,
                                 contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                         Text(
-                            text = "বর্তমান অবস্থান ব্যবহার করুন (GPS)",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = if (isDetectingLocation) "GPS অবস্থান সনাক্ত করা হচ্ছে..." else "বর্তমান অবস্থান (GPS) ব্যবহার করুন",
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
             }
 
-            // Quick suggestion chips
             Text(
-                text = "জনপ্রিয় স্থানসমূহ:",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = if (searchQuery.isBlank()) "জনপ্রিয় স্থানসমূহ" else "অনুসন্ধানের ফলাফল",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold
             )
-            Spacer(modifier = Modifier.height(6.dp))
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                val quickChips = listOf(
-                    "নাগেশ্বরী শহর" to (25.9667 to 89.6833),
-                    "কুড়িগ্রাম সদর" to (25.8050 to 89.6360),
-                    "ঢাকা" to (23.8103 to 90.4125),
-                    "শ্রীমঙ্গল" to (24.3065 to 91.7296),
-                    "কক্সবাজার" to (21.4272 to 92.0058),
-                    "রংপুর" to (25.7439 to 89.2752)
-                )
+            Spacer(modifier = Modifier.height(8.dp))
 
-                items(quickChips) { (title, coords) ->
-                    SuggestionChip(
-                        onClick = {
-                            val item = LocationItem(
-                                id = "chip_${title}",
-                                nameBn = title,
-                                nameEn = title,
-                                hierarchyBn = title,
-                                typeLabel = "শহর/উপজেলা",
-                                latitude = coords.first,
-                                longitude = coords.second
-                            )
-                            if (onLocationItemSelected != null) {
-                                onLocationItemSelected(item)
-                            } else {
-                                onLocationSelected(
-                                    BangladeshCity(title, title, "", "", coords.first, coords.second)
-                                )
-                            }
-                            onDismiss()
-                        },
-                        label = { Text(title, fontWeight = FontWeight.Medium) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Search Results List
             if (isSearching) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(180.dp),
+                        .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                }
-            } else if (searchResults.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "কোনো স্থান খুঁজে পাওয়া যায়নি। অন্য নাম দিয়ে চেষ্টা করুন।",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(320.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                        .height(320.dp)
                 ) {
-                    items(searchResults, key = { "${it.id}_${it.latitude}_${it.longitude}" }) { item ->
+                    items(searchResults, key = { it.id }) { item ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -291,72 +227,68 @@ fun BangladeshDistrictPickerSheet(
                                     } else {
                                         onLocationSelected(
                                             BangladeshCity(
-                                                item.nameEn,
-                                                item.nameBn,
-                                                item.hierarchyBn,
-                                                item.hierarchyBn,
-                                                item.latitude,
-                                                item.longitude
+                                                nameEn = item.nameEn,
+                                                nameBn = item.nameBn,
+                                                districtEn = item.nameEn,
+                                                districtBn = item.parentBn,
+                                                latitude = item.latitude,
+                                                longitude = item.longitude
                                             )
                                         )
                                     }
                                     onDismiss()
                                 }
-                                .padding(vertical = 10.dp, horizontal = 8.dp)
-                                .testTag("location_item_${item.id}"),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(vertical = 10.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Icon(
-                                    imageVector = if (item.typeLabel.contains("শহর") || item.typeLabel.contains("জেলা")) Icons.Default.LocationCity else Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(14.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "📍 ${item.nameBn}",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                    Icon(
+                                        imageVector = if (item.typeBn == "জেলা") Icons.Default.LocationCity else Icons.Default.LocationOn,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = item.typeLabel,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            fontSize = 10.sp
-                                        )
-                                    }
                                 }
 
-                                Text(
-                                    text = item.hierarchyBn,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
-                                )
+                                Column {
+                                    Text(
+                                        text = item.nameBn,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${item.parentBn} • ${item.typeBn}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 11.sp
+                                    )
+                                }
                             }
+
+                            Text(
+                                text = "বাছাই করুন",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
+
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                            thickness = 0.5.dp
+                        )
                     }
                 }
             }

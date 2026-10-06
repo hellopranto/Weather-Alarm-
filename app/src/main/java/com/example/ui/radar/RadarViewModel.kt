@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.UserPreferencesRepository
 import com.example.data.model.RadarFrameItem
-import com.example.data.model.RainViewerResponse
 import com.example.domain.repository.RadarRepository
 import com.example.domain.repository.Resource
 import kotlinx.coroutines.Job
@@ -25,9 +24,7 @@ data class RadarUiState(
     val frames: List<RadarFrameItem> = emptyList(),
     val currentFrameIndex: Int = 0,
     val isPlaying: Boolean = false,
-    val zoomLevel: Int = 6, // Ideal overview for Bangladesh (lat 20-27, lon 88-93)
-    val mapCenterLat: Double = 23.8103, // Dhaka center
-    val mapCenterLon: Double = 90.4125,
+    val zoomLevel: Int = 6,
     val userLat: Double = 23.8103,
     val userLon: Double = 90.4125,
     val error: String? = null
@@ -57,6 +54,8 @@ class RadarViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val prefs = preferencesRepository.userPreferencesFlow.first()
+            val userLat = if (prefs.selectedLatitude != 0.0) prefs.selectedLatitude else 23.8103
+            val userLon = if (prefs.selectedLongitude != 0.0) prefs.selectedLongitude else 90.4125
 
             radarRepository.getRadarMetadata().collect { resource ->
                 when (resource) {
@@ -66,14 +65,13 @@ class RadarViewModel(
                         val pastFrames = response.allPastFrames
                         val initialIndex = if (pastFrames.isNotEmpty()) pastFrames.size - 1 else 0
 
-
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             host = response.host,
                             frames = pastFrames,
                             currentFrameIndex = initialIndex,
-                            userLat = prefs.selectedLatitude,
-                            userLon = prefs.selectedLongitude,
+                            userLat = userLat,
+                            userLon = userLon,
                             error = null
                         )
                     }
@@ -113,64 +111,19 @@ class RadarViewModel(
 
     fun pauseAnimation() {
         animationJob?.cancel()
+        animationJob = null
         _uiState.value = _uiState.value.copy(isPlaying = false)
     }
 
-    fun selectFrameIndex(index: Int) {
-        val total = _uiState.value.frames.size
-        if (index in 0 until total) {
+    fun selectFrame(index: Int) {
+        pauseAnimation()
+        if (index in _uiState.value.frames.indices) {
             _uiState.value = _uiState.value.copy(currentFrameIndex = index)
         }
     }
 
-    fun stepForward() {
-        pauseAnimation()
-        val total = _uiState.value.frames.size
-        if (total > 0) {
-            val next = (_uiState.value.currentFrameIndex + 1) % total
-            _uiState.value = _uiState.value.copy(currentFrameIndex = next)
-        }
-    }
-
-    fun stepBack() {
-        pauseAnimation()
-        val total = _uiState.value.frames.size
-        if (total > 0) {
-            val prev = if (_uiState.value.currentFrameIndex - 1 < 0) total - 1 else _uiState.value.currentFrameIndex - 1
-            _uiState.value = _uiState.value.copy(currentFrameIndex = prev)
-        }
-    }
-
-    fun zoomIn() {
-        if (_uiState.value.zoomLevel < 8) {
-            _uiState.value = _uiState.value.copy(zoomLevel = _uiState.value.zoomLevel + 1)
-        }
-    }
-
-    fun zoomOut() {
-        if (_uiState.value.zoomLevel > 4) {
-            _uiState.value = _uiState.value.copy(zoomLevel = _uiState.value.zoomLevel - 1)
-        }
-    }
-
-    fun centerOnUserLocation() {
-        _uiState.value = _uiState.value.copy(
-            mapCenterLat = _uiState.value.userLat,
-            mapCenterLon = _uiState.value.userLon
-        )
-    }
-
-    fun getRadarTileUrl(z: Int, x: Int, y: Int): String {
-        val state = _uiState.value
-        val frame = state.currentFrame ?: return ""
-        return radarRepository.getTileUrl(
-            host = state.host,
-            path = frame.path,
-            z = z,
-            x = x,
-            y = y,
-            colorScheme = 2, // Universal Blue
-            smooth = true
-        )
+    override fun onCleared() {
+        super.onCleared()
+        animationJob?.cancel()
     }
 }

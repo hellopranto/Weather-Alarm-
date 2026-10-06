@@ -3,7 +3,6 @@ package com.example.navigation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -12,13 +11,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.example.ui.alerts.AlertsScreen
 import com.example.ui.alerts.AlertsViewModel
 import com.example.ui.home.HomeScreen
@@ -29,31 +28,43 @@ import com.example.ui.radar.RadarScreen
 import com.example.ui.radar.RadarViewModel
 import com.example.ui.settings.SettingsScreen
 import com.example.ui.settings.SettingsViewModel
+import com.example.ui.stations.BmdStationsScreen
+import com.example.ui.stations.BmdStationsViewModel
 
 @Composable
 fun AppNavigation(
-    navController: NavHostController,
     homeViewModel: HomeViewModel,
     hourlyViewModel: HourlyViewModel,
-    radarViewModel: RadarViewModel,
     alertsViewModel: AlertsViewModel,
+    radarViewModel: RadarViewModel,
+    stationsViewModel: BmdStationsViewModel,
     settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
+    val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val screens = listOf(
+        Screen.Home,
+        Screen.Hourly,
+        Screen.Radar,
+        Screen.Stations,
+        Screen.Alerts,
+        Screen.Settings
+    )
+
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         bottomBar = {
             NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.testTag("bottom_navigation_bar")
+                containerColor = Color(0xEE0A1B36),
+                contentColor = Color.White
             ) {
-                Screen.bottomNavItems.forEach { screen ->
-                    val isSelected = currentRoute == screen.route
+                screens.forEach { screen ->
+                    val selected = currentRoute == screen.route
                     NavigationBarItem(
-                        selected = isSelected,
+                        selected = selected,
                         onClick = {
                             if (currentRoute != screen.route) {
                                 navController.navigate(screen.route) {
@@ -66,24 +77,23 @@ fun AppNavigation(
                             }
                         },
                         icon = {
-                            Icon(
-                                imageVector = screen.icon,
-                                contentDescription = stringResource(screen.titleRes)
-                            )
+                            Icon(imageVector = screen.icon, contentDescription = screen.titleBn)
                         },
                         label = {
-                            Text(text = stringResource(screen.titleRes))
+                            Text(text = screen.titleBn, fontSize = 10.sp, maxLines = 1)
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        modifier = Modifier.testTag(screen.testTag)
+                            selectedIconColor = Color(0xFF0D3268),
+                            selectedTextColor = Color(0xFF81D4FA),
+                            indicatorColor = Color(0xFF81D4FA),
+                            unselectedIconColor = Color.White.copy(alpha = 0.6f),
+                            unselectedTextColor = Color.White.copy(alpha = 0.6f)
+                        )
                     )
                 }
             }
-        }
+        },
+        modifier = modifier.fillMaxSize()
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -93,9 +103,7 @@ fun AppNavigation(
             composable(Screen.Home.route) {
                 HomeScreen(
                     viewModel = homeViewModel,
-                    onNavigateToAlerts = {
-                        navController.navigate(Screen.Alerts.route)
-                    }
+                    onNavigateToAlerts = { navController.navigate(Screen.Alerts.route) }
                 )
             }
             composable(Screen.Hourly.route) {
@@ -103,6 +111,18 @@ fun AppNavigation(
             }
             composable(Screen.Radar.route) {
                 RadarScreen(viewModel = radarViewModel)
+            }
+            composable(Screen.Stations.route) {
+                BmdStationsScreen(
+                    viewModel = stationsViewModel,
+                    onSelectStationForHome = { city ->
+                        homeViewModel.selectCity(city)
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
             composable(Screen.Alerts.route) {
                 AlertsScreen(viewModel = alertsViewModel)

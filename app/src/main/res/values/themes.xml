@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.MyApplication" parent="android:Theme.DeviceDefault.NoActionBar" />
+    <style name="Theme.WeatherAlertBangladesh" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/weather_primary</item>
+        <item name="android:navigationBarColor">@color/weather_primary</item>
+    </style>
 </resources>

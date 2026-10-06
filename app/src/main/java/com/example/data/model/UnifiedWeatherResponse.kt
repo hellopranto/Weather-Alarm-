@@ -71,11 +71,11 @@ data class CurrentWeatherModel(
     @Json(name = "tempMin") val tempMin: Double? = null,
     @Json(name = "tempMax") val tempMax: Double? = null,
     @Json(name = "humidity") val humidity: Int? = null,
-    @Json(name = "windSpeed") val windSpeed: Double? = null, // in km/h
-    @Json(name = "windDirection") val windDirection: Int? = null, // in degrees
+    @Json(name = "windSpeed") val windSpeed: Double? = null,
+    @Json(name = "windDirection") val windDirection: Int? = null,
     @Json(name = "windGust") val windGust: Double? = null,
-    @Json(name = "pressure") val pressure: Int? = null, // in hPa
-    @Json(name = "visibility") val visibility: Int? = null, // in meters
+    @Json(name = "pressure") val pressure: Int? = null,
+    @Json(name = "visibility") val visibility: Int? = null,
     @Json(name = "dewPoint") val dewPoint: Double? = null,
     @Json(name = "cloudCoverage") val cloudCoverage: Int? = null,
     @Json(name = "rainfall") val rainfall: Double? = null,
@@ -168,7 +168,7 @@ data class WeatherAlertModel(
     @Json(name = "titleBn") val titleBn: String? = null,
     @Json(name = "description") val description: String = "",
     @Json(name = "descriptionBn") val descriptionBn: String? = null,
-    @Json(name = "severity") val severity: String = "INFO", // INFO, WARNING, DANGER, GREAT_DANGER
+    @Json(name = "severity") val severity: String = "INFO",
     @Json(name = "area") val area: String? = null,
     @Json(name = "startTime") val startTime: String = "",
     @Json(name = "endTime") val endTime: String = "",

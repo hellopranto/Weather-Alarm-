@@ -2,9 +2,7 @@ package com.example.ui.hourly
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.local.UserPreferences
 import com.example.data.local.UserPreferencesRepository
-import com.example.data.model.UnifiedWeatherResponse
 import com.example.domain.repository.Resource
 import com.example.domain.repository.WeatherRepository
 import com.example.ui.home.WeatherUiState
@@ -30,11 +28,10 @@ class HourlyViewModel(
         viewModelScope.launch {
             _uiState.value = WeatherUiState.Loading
             val prefs = preferencesRepository.userPreferencesFlow.first()
-            weatherRepository.getWeather(
-                prefs.selectedLatitude,
-                prefs.selectedLongitude,
-                prefs.selectedCityName
-            ).collect { res ->
+            val lat = if (prefs.selectedLatitude != 0.0) prefs.selectedLatitude else 23.8103
+            val lon = if (prefs.selectedLongitude != 0.0) prefs.selectedLongitude else 90.4125
+
+            weatherRepository.getWeather(lat, lon, prefs.selectedCityName).collect { res ->
                 when (res) {
                     is Resource.Loading -> _uiState.value = WeatherUiState.Loading
                     is Resource.Success -> _uiState.value = WeatherUiState.Success(
@@ -43,7 +40,7 @@ class HourlyViewModel(
                         userPreferences = prefs
                     )
                     is Resource.Error -> {
-                        val cached = weatherRepository.getCachedWeather(prefs.selectedLatitude, prefs.selectedLongitude)
+                        val cached = weatherRepository.getCachedWeather(lat, lon)
                         _uiState.value = WeatherUiState.Error(res.message, cached)
                     }
                 }

@@ -18,7 +18,7 @@ class RadarRepositoryImpl(
     override fun getRadarMetadata(): Flow<Resource<RainViewerResponse>> = flow {
         emit(Resource.Loading)
         try {
-            // 1. Fetch live radar data from real backend endpoint
+            // 1. Fetch live radar from real backend
             val backendResponse = radarApi.getBackendRadarMaps()
             val frames = backendResponse.allPastFrames
             if (frames.isNotEmpty()) {
@@ -31,7 +31,7 @@ class RadarRepositoryImpl(
         } catch (_: Exception) {}
 
         try {
-            // 2. Fallback to upstream RainViewer public API directly
+            // 2. Direct upstream RainViewer fallback
             val publicResponse = radarApi.getRainViewerPublicMaps()
             val frames = publicResponse.allPastFrames
             if (frames.isNotEmpty()) {
