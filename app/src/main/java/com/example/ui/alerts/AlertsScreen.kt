@@ -201,7 +201,7 @@ fun AlertCard(alert: WeatherAlertModel) {
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "📍 $reg",
+                                text = reg,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF81D4FA),
                                 fontSize = 11.sp,

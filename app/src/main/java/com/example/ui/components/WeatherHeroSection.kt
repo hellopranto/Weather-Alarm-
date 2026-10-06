@@ -93,7 +93,7 @@ fun WeatherTopHeader(
             .padding(horizontal = 4.dp, vertical = 6.dp)
             .testTag("home_top_header")
     ) {
-        // Top line: Menu ☰ | 📍 Location Title & Date | Refresh
+        // Top line: Menu button | Location Title & Date | Refresh button
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

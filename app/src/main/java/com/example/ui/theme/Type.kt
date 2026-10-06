@@ -23,6 +23,18 @@ val Typography = Typography(
         fontSize = 57.sp,
         lineHeight = 64.sp
     ),
+    displayMedium = TextStyle(
+        fontFamily = AnekBanglaFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 45.sp,
+        lineHeight = 52.sp
+    ),
+    displaySmall = TextStyle(
+        fontFamily = AnekBanglaFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 36.sp,
+        lineHeight = 44.sp
+    ),
     headlineLarge = TextStyle(
         fontFamily = AnekBanglaFontFamily,
         fontWeight = FontWeight.Bold,

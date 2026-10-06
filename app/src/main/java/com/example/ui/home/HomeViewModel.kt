@@ -157,7 +157,7 @@ class HomeViewModel(
                 lon = item.longitude,
                 useGps = false
             )
-            _locationMessage.value = "নির্বাচিত স্থান: 📍 ${item.nameBn}"
+            _locationMessage.value = "নির্বাচিত স্থান: ${item.nameBn}"
             fetchWeather(item.latitude, item.longitude, item.nameBn, isGps = false, forceRefresh = true)
         }
     }
@@ -172,7 +172,7 @@ class HomeViewModel(
                 lon = city.longitude,
                 useGps = false
             )
-            _locationMessage.value = "নির্বাচিত স্থান: 📍 ${city.nameBn}"
+            _locationMessage.value = "নির্বাচিত স্থান: ${city.nameBn}"
             fetchWeather(city.latitude, city.longitude, city.nameBn, isGps = false, forceRefresh = true)
         }
     }
