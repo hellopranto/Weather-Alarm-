@@ -122,6 +122,11 @@ fun BmdStationsScreen(
         OutlinedTextField(
             value = uiState.searchQuery,
             onValueChange = { viewModel.setSearchQuery(it) },
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                fontFamily = com.example.ui.theme.AnekBanglaFontFamily,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                color = Color.White
+            ),
             placeholder = { Text("স্টেশন বা বিভাগ খুঁজুন...", color = Color.White.copy(alpha = 0.6f)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF81D4FA)) },
             trailingIcon = {

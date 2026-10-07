@@ -118,6 +118,10 @@ fun BangladeshDistrictPickerSheet(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = com.example.ui.theme.AnekBanglaFontFamily,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("location_search_input"),
