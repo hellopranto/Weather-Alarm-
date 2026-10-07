@@ -57,6 +57,7 @@ import com.example.ui.components.SunMoonSection
 import com.example.ui.components.TenDayForecastSection
 import com.example.ui.components.WeatherAlertsSection
 import com.example.ui.components.WeatherHeroCard
+import com.example.ui.components.WeatherLoadingSkeleton
 import com.example.ui.components.WeatherMetricsGridBengali
 import com.example.ui.components.WeatherTopHeader
 
@@ -134,25 +135,7 @@ fun HomeScreen(
         ) {
             when (val state = uiState) {
                 is WeatherUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.testTag("home_loading")
-                            )
-                            Text(
-                                text = "আবহাওয়ার তথ্য লোড হচ্ছে...",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color.White.copy(alpha = 0.9f)
-                            )
-                        }
-                    }
+                    WeatherLoadingSkeleton()
                 }
                 is WeatherUiState.Error -> {
                     if (state.cachedData != null) {

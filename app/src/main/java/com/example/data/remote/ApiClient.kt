@@ -69,4 +69,44 @@ object ApiClient {
             .build()
             .create(RadarApi::class.java)
     }
+
+    val rainApi: RainApi by lazy {
+        val baseUrl = try {
+            val url = BuildConfig.BACKEND_BASE_URL
+            if (url.isNotBlank() && url.startsWith("http")) {
+                if (url.endsWith("/")) url else "$url/"
+            } else {
+                DEFAULT_BACKEND_URL
+            }
+        } catch (_: Exception) {
+            DEFAULT_BACKEND_URL
+        }
+
+        Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(RainApi::class.java)
+    }
+
+    val airQualityApi: AirQualityApi by lazy {
+        val baseUrl = try {
+            val url = BuildConfig.BACKEND_BASE_URL
+            if (url.isNotBlank() && url.startsWith("http")) {
+                if (url.endsWith("/")) url else "$url/"
+            } else {
+                DEFAULT_BACKEND_URL
+            }
+        } catch (_: Exception) {
+            DEFAULT_BACKEND_URL
+        }
+
+        Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(AirQualityApi::class.java)
+    }
 }

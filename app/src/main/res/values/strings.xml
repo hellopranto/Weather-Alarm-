@@ -3,8 +3,10 @@
     <string name="app_name">Weather Alert Bangladesh</string>
     <string name="loading_weather">আবহাওয়ার তথ্য লোড হচ্ছে...</string>
     <string name="error_loading_weather">আবহাওয়ার তথ্য লোড করা যায়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।</string>
+    <string name="error_generic">একটি সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।</string>
     <string name="btn_retry">পুনরায় চেষ্টা করুন</string>
     <string name="btn_close">বন্ধ করুন</string>
+    <string name="pull_to_refresh">রিফ্রেশ করতে টানুন</string>
     <string name="nav_home">হোম</string>
     <string name="nav_hourly">২৪ ঘণ্টা</string>
     <string name="nav_radar">রাডার</string>
@@ -15,4 +17,23 @@
     <string name="no_active_alerts">বর্তমানে কোনো সক্রিয় আবহাওয়া সতর্কতা নেই।</string>
     <string name="search_location_placeholder">স্থান খুঁজুন (জেলা, উপজেলা, শহর, গ্রাম)</string>
     <string name="use_current_location">বর্তমান অবস্থান (GPS)</string>
+
+    <!-- Air Quality Strings -->
+    <string name="air_quality_title">বায়ু মান পর্যবেক্ষণ (AQI)</string>
+    <string name="pm25_label">PM2.5</string>
+    <string name="pm10_label">PM10</string>
+    <string name="no2_label">NO₂ (নাইট্রোজেন ডাইঅক্সাইড)</string>
+    <string name="o3_label">O₃ (ওজোন)</string>
+    <string name="so2_label">SO₂ (সালফার ডাইঅক্সাইড)</string>
+    <string name="co_label">CO (কার্বন মনোক্সাইড)</string>
+    <string name="health_advisory_title">স্বাস্থ্য সতর্কতা ও পরামর্শ</string>
+    <string name="modeled_data_disclaimer">আন্তর্জাতিক বায়ুমণ্ডলীয় মডেল ও পূর্বাভাস</string>
+
+    <!-- Rain Prediction Strings -->
+    <string name="rain_prediction_title">বৃষ্টিপাতের পূর্বাভাস</string>
+    <string name="rain_periods">সম্ভাব্য বৃষ্টির সময়কাল</string>
+    <string name="hourly_forecast">ঘণ্টাভিত্তিক বৃষ্টিপাত বিশ্লেষণ</string>
+    <string name="daily_forecast">৭ দিনের বৃষ্টিপাত প্রাক্কলন</string>
+    <string name="rain_probability_24h">২৪ ঘণ্টায় বৃষ্টির সর্বোচ্চ সম্ভাবনা</string>
+    <string name="expected_rainfall">মোট সম্ভাব্য বৃষ্টিপাত</string>
 </resources>
