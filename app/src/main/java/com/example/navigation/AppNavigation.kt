@@ -26,6 +26,8 @@ import com.example.ui.hourly.HourlyScreen
 import com.example.ui.hourly.HourlyViewModel
 import com.example.ui.radar.RadarScreen
 import com.example.ui.radar.RadarViewModel
+import com.example.ui.rain.RainPredictionScreen
+import com.example.ui.rain.RainPredictionViewModel
 import com.example.ui.settings.SettingsScreen
 import com.example.ui.settings.SettingsViewModel
 import com.example.ui.stations.BmdStationsScreen
@@ -39,6 +41,7 @@ fun AppNavigation(
     radarViewModel: RadarViewModel,
     stationsViewModel: BmdStationsViewModel,
     settingsViewModel: SettingsViewModel,
+    rainViewModel: RainPredictionViewModel,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -103,7 +106,14 @@ fun AppNavigation(
             composable(Screen.Home.route) {
                 HomeScreen(
                     viewModel = homeViewModel,
-                    onNavigateToAlerts = { navController.navigate(Screen.Alerts.route) }
+                    onNavigateToAlerts = { navController.navigate(Screen.Alerts.route) },
+                    onNavigateToRainPrediction = { navController.navigate(Screen.Rain.route) }
+                )
+            }
+            composable(Screen.Rain.route) {
+                RainPredictionScreen(
+                    viewModel = rainViewModel,
+                    onBack = { navController.popBackStack() }
                 )
             }
             composable(Screen.Hourly.route) {

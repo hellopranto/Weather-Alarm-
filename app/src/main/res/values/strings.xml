@@ -36,4 +36,12 @@
     <string name="daily_forecast">৭ দিনের বৃষ্টিপাত প্রাক্কলন</string>
     <string name="rain_probability_24h">২৪ ঘণ্টায় বৃষ্টির সর্বোচ্চ সম্ভাবনা</string>
     <string name="expected_rainfall">মোট সম্ভাব্য বৃষ্টিপাত</string>
+    <string name="rain_prediction_immediate">তাত্ক্ষণিক বৃষ্টির সম্ভাবনা</string>
+    <string name="rain_eta_label">বৃষ্টি শুরু হতে পারে</string>
+    <string name="rain_duration_label">সম্ভাব্য স্থায়িত্ব</string>
+    <string name="radar_status_label">রাডার পর্যবেক্ষণ</string>
+    <string name="heavy_rain_warning_title">ভারী বৃষ্টির সতর্কতা</string>
+    <string name="confidence_label">পূর্বাভাস আত্মবিশ্বাস</string>
+    <string name="timeline_label">বৃষ্টির সময়রেখা (Nowcast)</string>
+    <string name="view_rain_details">বিস্তারিত পূর্বাভাস দেখুন</string>
 </resources>

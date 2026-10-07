@@ -286,6 +286,7 @@ fun WeatherHeroCard(
     current: CurrentWeatherModel,
     station: StationModel?,
     tempUnit: TemperatureUnit,
+    bmd: com.example.data.model.BmdStatusModel? = null,
     modifier: Modifier = Modifier
 ) {
     val tempText = BanglaUtils.formatTemp(current.temperature, tempUnit)
@@ -374,7 +375,12 @@ fun WeatherHeroCard(
                         modifier = Modifier.size(16.dp)
                     )
 
-                    val sourceText = if (station != null && station.name.isNotBlank()) {
+                    val sourceText = if (bmd != null && !bmd.station.isNullOrBlank()) {
+                        val cleanName = formatStationName(bmd.station)
+                        val distStr = bmd.distanceKm?.let { " • দূরত্ব: ${BanglaUtils.toBanglaDigits(it.toInt())} কিমি" } ?: ""
+                        val staleStr = if (bmd.isStale) " • পূর্বের তথ্য" else ""
+                        "BMD স্টেশন: $cleanName$distStr$staleStr"
+                    } else if (station != null && station.name.isNotBlank()) {
                         val cleanName = formatStationName(station.name)
                         val absDistance = kotlin.math.abs(station.distanceKm)
                         val distStr = BanglaUtils.toBanglaDigits(absDistance)

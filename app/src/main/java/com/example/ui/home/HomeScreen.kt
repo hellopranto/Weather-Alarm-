@@ -66,6 +66,7 @@ import com.example.ui.components.WeatherTopHeader
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToAlerts: () -> Unit,
+    onNavigateToRainPrediction: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -217,7 +218,8 @@ fun HomeScreen(
                             )
                         },
                         onRefresh = { viewModel.loadWeather(forceRefresh = true) },
-                        onNavigateToAlerts = onNavigateToAlerts
+                        onNavigateToAlerts = onNavigateToAlerts,
+                        onNavigateToRainPrediction = onNavigateToRainPrediction
                     )
                 }
             }
@@ -237,6 +239,7 @@ fun HomeContent(
     onUseGps: () -> Unit,
     onRefresh: () -> Unit,
     onNavigateToAlerts: () -> Unit,
+    onNavigateToRainPrediction: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -296,8 +299,16 @@ fun HomeContent(
             WeatherHeroCard(
                 current = weather.current,
                 station = weather.station,
-                tempUnit = tempUnit
+                tempUnit = tempUnit,
+                bmd = weather.bmd
             )
+        }
+
+        // Nearest BMD Observation Data Card
+        if (weather.bmd != null && !weather.bmd.station.isNullOrBlank()) {
+            item {
+                com.example.ui.components.BmdStationObservationCard(bmd = weather.bmd)
+            }
         }
 
         // 3. Hourly Forecast (24h)
@@ -338,11 +349,19 @@ fun HomeContent(
             )
         }
 
-        // 5.1 Rain Prediction Bulletin (if provided by backend)
-        if (weather.rainPrediction != null) {
-            item {
-                com.example.ui.components.RainPredictionSection(rainPrediction = weather.rainPrediction)
-            }
+        // 5.1 Real-Time Multi-Source Rain Prediction Bulletin
+        item {
+            val predictionData = com.example.domain.RainPredictionEngine.generatePrediction(
+                weather = weather,
+                radar = null,
+                lat = weather.location.latitude,
+                lon = weather.location.longitude,
+                cityName = weather.location.displayName ?: weather.location.name
+            )
+            com.example.ui.components.RainPredictionSection(
+                prediction = predictionData,
+                onViewFullPrediction = onNavigateToRainPrediction
+            )
         }
 
         // 6. Air Quality (AQI, PM2.5, PM10, etc.)

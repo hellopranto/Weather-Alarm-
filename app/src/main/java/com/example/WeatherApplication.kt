@@ -9,6 +9,7 @@ import com.example.data.repository.RadarRepositoryImpl
 import com.example.data.repository.WeatherRepositoryImpl
 import com.example.domain.repository.BmdWeatherRepository
 import com.example.domain.repository.RadarRepository
+import com.example.domain.repository.RainRepository
 import com.example.domain.repository.WeatherRepository
 import com.example.location.DefaultLocationTracker
 import com.example.location.LocationTracker
@@ -23,6 +24,9 @@ class WeatherApplication : Application() {
         private set
 
     lateinit var radarRepository: RadarRepository
+        private set
+
+    lateinit var rainRepository: RainRepository
         private set
 
     lateinit var userPreferencesRepository: UserPreferencesRepository
@@ -40,18 +44,27 @@ class WeatherApplication : Application() {
         userPreferencesRepository = UserPreferencesRepository(this)
         locationTracker = DefaultLocationTracker(fusedLocationClient, this)
 
-        weatherRepository = WeatherRepositoryImpl(
-            weatherApi = ApiClient.weatherApi,
-            weatherDao = database.weatherDao(),
-            moshi = ApiClient.moshi
-        )
-
         bmdRepository = BmdWeatherRepositoryImpl(
             bmdApi = ApiClient.bmdApi
         )
 
+        weatherRepository = WeatherRepositoryImpl(
+            weatherApi = ApiClient.weatherApi,
+            weatherDao = database.weatherDao(),
+            moshi = ApiClient.moshi,
+            bmdRepository = bmdRepository
+        )
+
         radarRepository = RadarRepositoryImpl(
             radarApi = ApiClient.radarApi
+        )
+
+        rainRepository = com.example.data.repository.RainRepositoryImpl(
+            rainApi = ApiClient.rainApi,
+            weatherApi = ApiClient.weatherApi,
+            radarApi = ApiClient.radarApi,
+            userPreferencesRepository = userPreferencesRepository,
+            appContext = this
         )
     }
 }

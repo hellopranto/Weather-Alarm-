@@ -2,9 +2,13 @@ package com.example.data.repository
 
 import com.example.data.local.WeatherCacheEntity
 import com.example.data.local.WeatherDao
+import com.example.data.model.BmdNearestResponse
+import com.example.data.model.BmdStationObservationDto
+import com.example.data.model.BmdStatusModel
 import com.example.data.model.UnifiedWeatherResponse
 import com.example.data.remote.ApiClient
 import com.example.data.remote.WeatherApi
+import com.example.domain.repository.BmdWeatherRepository
 import com.example.domain.repository.Resource
 import com.example.domain.repository.WeatherRepository
 import com.squareup.moshi.Moshi
@@ -17,7 +21,8 @@ import java.util.Locale
 class WeatherRepositoryImpl(
     private val weatherApi: WeatherApi,
     private val weatherDao: WeatherDao,
-    private val moshi: Moshi = ApiClient.moshi
+    private val moshi: Moshi = ApiClient.moshi,
+    private val bmdRepository: BmdWeatherRepository? = null
 ) : WeatherRepository {
 
     private val responseAdapter = moshi.adapter(UnifiedWeatherResponse::class.java)
@@ -53,22 +58,69 @@ class WeatherRepositoryImpl(
                 name = cityName?.ifBlank { null }
             )
 
+            // 3. Merge nearest BMD observation if available
+            val mergedResponse = if (bmdRepository != null) {
+                try {
+                    var bmdData: BmdNearestResponse? = null
+                    bmdRepository.getNearestBmdData(latitude, longitude).collect { res ->
+                        if (res is Resource.Success) {
+                            bmdData = res.data
+                        }
+                    }
+
+                    if (bmdData != null && bmdData?.nearestStation != null) {
+                        val st = bmdData!!.nearestStation!!
+                        val obs = bmdData!!.observation
+                        val mergedBmd = BmdStatusModel(
+                            available = obs?.temperature != null || obs?.humidity != null || obs?.rainfall != null,
+                            station = st.stationName,
+                            stationCode = st.stationCode,
+                            distanceKm = st.distanceKm,
+                            observation = obs?.let {
+                                BmdStationObservationDto(
+                                    stationId = st.stationId,
+                                    stationName = st.stationName,
+                                    division = "",
+                                    temperatureC = it.temperature ?: 0.0,
+                                    humidityPercent = it.humidity ?: 0,
+                                    windSpeedKmh = it.windSpeed ?: 0.0,
+                                    windDirectionDegrees = it.windDirection ?: 0,
+                                    pressureHpa = it.pressure ?: 1008.0,
+                                    rainfall24hMm = it.rainfall ?: 0.0,
+                                    recordedAt = it.observationTime.orEmpty()
+                                )
+                            },
+                            isStale = bmdData!!.isStale,
+                            observationTime = obs?.observationTime
+                        )
+                        // Preserve original user location name, attach BMD observation
+                        networkResponse.copy(bmd = mergedBmd)
+                    } else {
+                        networkResponse
+                    }
+                } catch (_: Exception) {
+                    networkResponse
+                }
+            } else {
+                networkResponse
+            }
+
             // Cache successfully resolved response in Room
             try {
-                val jsonStr = responseAdapter.toJson(networkResponse)
+                val jsonStr = responseAdapter.toJson(mergedResponse)
                 weatherDao.insertCache(
                     WeatherCacheEntity(
                         locationKey = locationKey,
                         latitude = latitude,
                         longitude = longitude,
-                        cityName = cityName ?: networkResponse.location.name,
+                        cityName = cityName ?: mergedResponse.location.name,
                         responseJson = jsonStr,
                         timestampMillis = System.currentTimeMillis()
                     )
                 )
             } catch (_: Exception) {}
 
-            emit(Resource.Success(networkResponse, isOfflineCached = false))
+            emit(Resource.Success(mergedResponse, isOfflineCached = false))
         } catch (e: Exception) {
             // If network fails, fallback to cached data if available
             if (cachedEntity != null) {

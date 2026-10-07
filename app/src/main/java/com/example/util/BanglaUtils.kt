@@ -122,4 +122,28 @@ object BanglaUtils {
             else -> condition ?: "স্বাভাবিক আবহাওয়া"
         }
     }
+
+    fun formatBengaliDateTime(isoString: String): String {
+        if (isoString.isBlank()) return ""
+        return try {
+            val cleanStr = isoString.substringBefore("Z").substringBefore("+")
+            val parser = if (cleanStr.contains(".")) {
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US)
+            } else if (cleanStr.contains("T")) {
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+            } else {
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+            }
+            val date = parser.parse(cleanStr)
+            if (date != null) {
+                val output = SimpleDateFormat("hh:mm a, dd MMMM", Locale.US)
+                val formatted = output.format(date)
+                formatHourBengali(formatted)
+            } else {
+                toBanglaDigits(isoString)
+            }
+        } catch (_: Exception) {
+            toBanglaDigits(isoString)
+        }
+    }
 }

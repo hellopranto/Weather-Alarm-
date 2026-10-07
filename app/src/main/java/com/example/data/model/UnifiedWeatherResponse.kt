@@ -182,14 +182,27 @@ data class WeatherAlertModel(
 data class RainPredictionModel(
     @Json(name = "expectedNextHours") val expectedNextHours: String? = null,
     @Json(name = "rainProbability") val rainProbability: Int? = null,
-    @Json(name = "summaryBn") val summaryBn: String? = null
+    @Json(name = "summaryBn") val summaryBn: String? = null,
+    @Json(name = "next15Minutes") val next15Minutes: Int? = null,
+    @Json(name = "next30Minutes") val next30Minutes: Int? = null,
+    @Json(name = "next1Hour") val next1Hour: Int? = null,
+    @Json(name = "next3Hours") val next3Hours: Int? = null,
+    @Json(name = "startInMinutes") val startInMinutes: Int? = null,
+    @Json(name = "durationMinutes") val durationMinutes: Int? = null,
+    @Json(name = "intensityBn") val intensityBn: String? = null,
+    @Json(name = "radarStatusBn") val radarStatusBn: String? = null,
+    @Json(name = "confidenceBn") val confidenceBn: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class BmdStatusModel(
     @Json(name = "available") val available: Boolean = false,
     @Json(name = "station") val station: String? = null,
-    @Json(name = "observation") val observation: BmdStationObservationDto? = null
+    @Json(name = "stationCode") val stationCode: String? = null,
+    @Json(name = "distanceKm") val distanceKm: Double? = null,
+    @Json(name = "observation") val observation: BmdStationObservationDto? = null,
+    @Json(name = "isStale") val isStale: Boolean = false,
+    @Json(name = "observationTime") val observationTime: String? = null
 )
 
 @JsonClass(generateAdapter = true)

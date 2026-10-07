@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -16,4 +17,5 @@ sealed class Screen(val route: String, val titleBn: String, val icon: ImageVecto
     data object Stations : Screen("stations", "স্টেশন", Icons.Default.Sensors)
     data object Alerts : Screen("alerts", "সতর্কতা", Icons.Default.NotificationsActive)
     data object Settings : Screen("settings", "সেটিংস", Icons.Default.Settings)
+    data object Rain : Screen("rain", "বৃষ্টির পূর্বাভাস", Icons.Default.Umbrella)
 }

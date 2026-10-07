@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
         val weatherRepo = app.weatherRepository
         val bmdRepo = app.bmdRepository
         val radarRepo = app.radarRepository
+        val rainRepo = app.rainRepository
         val preferencesRepo = app.userPreferencesRepository
         val locationTracker = app.locationTracker
 
@@ -96,6 +97,15 @@ class MainActivity : ComponentActivity() {
                     }
                 )
 
+                val rainViewModel: com.example.ui.rain.RainPredictionViewModel = viewModel(
+                    factory = object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return com.example.ui.rain.RainPredictionViewModel(rainRepo, preferencesRepo) as T
+                        }
+                    }
+                )
+
                 val permissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestMultiplePermissions()
                 ) { permissions ->
@@ -144,7 +154,8 @@ class MainActivity : ComponentActivity() {
                         alertsViewModel = alertsViewModel,
                         radarViewModel = radarViewModel,
                         stationsViewModel = stationsViewModel,
-                        settingsViewModel = settingsViewModel
+                        settingsViewModel = settingsViewModel,
+                        rainViewModel = rainViewModel
                     )
                 }
             }
