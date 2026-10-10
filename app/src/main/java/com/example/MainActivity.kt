@@ -106,6 +106,19 @@ class MainActivity : ComponentActivity() {
                     }
                 )
 
+                val upazilaViewModel: com.example.ui.forecast.UpazilaForecastViewModel = viewModel(
+                    factory = object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return com.example.ui.forecast.UpazilaForecastViewModel(
+                                repository = app.upazilaForecastRepository,
+                                preferencesRepository = preferencesRepo,
+                                locationTracker = locationTracker
+                            ) as T
+                        }
+                    }
+                )
+
                 val permissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestMultiplePermissions()
                 ) { permissions ->
@@ -155,7 +168,8 @@ class MainActivity : ComponentActivity() {
                         radarViewModel = radarViewModel,
                         stationsViewModel = stationsViewModel,
                         settingsViewModel = settingsViewModel,
-                        rainViewModel = rainViewModel
+                        rainViewModel = rainViewModel,
+                        upazilaViewModel = upazilaViewModel
                     )
                 }
             }

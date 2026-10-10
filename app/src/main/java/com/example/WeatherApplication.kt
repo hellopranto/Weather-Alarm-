@@ -29,6 +29,9 @@ class WeatherApplication : Application() {
     lateinit var rainRepository: RainRepository
         private set
 
+    lateinit var upazilaForecastRepository: com.example.domain.repository.UpazilaForecastRepository
+        private set
+
     lateinit var userPreferencesRepository: UserPreferencesRepository
         private set
 
@@ -65,6 +68,12 @@ class WeatherApplication : Application() {
             radarApi = ApiClient.radarApi,
             userPreferencesRepository = userPreferencesRepository,
             appContext = this
+        )
+
+        upazilaForecastRepository = com.example.data.repository.UpazilaForecastRepositoryImpl(
+            api = ApiClient.upazilaForecastApi,
+            context = this,
+            moshi = ApiClient.moshi
         )
     }
 }

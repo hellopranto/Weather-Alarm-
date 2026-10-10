@@ -109,4 +109,15 @@ object ApiClient {
             .build()
             .create(AirQualityApi::class.java)
     }
+
+    const val UPAZILA_FORECAST_DIRECT_BASE_URL = "https://api.bdservers.site/"
+
+    val upazilaForecastApi: UpazilaForecastApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(UPAZILA_FORECAST_DIRECT_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(UpazilaForecastApi::class.java)
+    }
 }

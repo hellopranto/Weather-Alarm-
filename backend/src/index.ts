@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import rainRoutes from './routes/rainRoutes';
 import airQualityRoutes from './routes/airQualityRoutes';
 import bmdRoutes from './routes/bmdRoutes';
+import upazilaForecastRoutes from './routes/upazilaForecastRoutes';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/rain-prediction', rainRoutes);
 app.use('/api/air-quality', airQualityRoutes);
 app.use('/api/bmd', bmdRoutes);
+app.use('/api/upazila-forecast', upazilaForecastRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'weather-alert-bangladesh-backend' });

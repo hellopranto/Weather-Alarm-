@@ -3,6 +3,7 @@ package com.example.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Settings
@@ -18,4 +19,5 @@ sealed class Screen(val route: String, val titleBn: String, val icon: ImageVecto
     data object Alerts : Screen("alerts", "সতর্কতা", Icons.Default.NotificationsActive)
     data object Settings : Screen("settings", "সেটিংস", Icons.Default.Settings)
     data object Rain : Screen("rain", "বৃষ্টির পূর্বাভাস", Icons.Default.Umbrella)
+    data object Upazila : Screen("upazila", "উপজেলা", Icons.Default.LocationCity)
 }

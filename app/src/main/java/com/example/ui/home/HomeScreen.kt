@@ -4,6 +4,7 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +20,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -67,6 +72,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToAlerts: () -> Unit,
     onNavigateToRainPrediction: (() -> Unit)? = null,
+    onNavigateToUpazila: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -157,7 +163,9 @@ fun HomeScreen(
                                 )
                             },
                             onRefresh = { viewModel.loadWeather(forceRefresh = true) },
-                            onNavigateToAlerts = onNavigateToAlerts
+                            onNavigateToAlerts = onNavigateToAlerts,
+                            onNavigateToRainPrediction = onNavigateToRainPrediction,
+                            onNavigateToUpazila = onNavigateToUpazila
                         )
                     } else {
                         Box(
@@ -219,7 +227,8 @@ fun HomeScreen(
                         },
                         onRefresh = { viewModel.loadWeather(forceRefresh = true) },
                         onNavigateToAlerts = onNavigateToAlerts,
-                        onNavigateToRainPrediction = onNavigateToRainPrediction
+                        onNavigateToRainPrediction = onNavigateToRainPrediction,
+                        onNavigateToUpazila = onNavigateToUpazila
                     )
                 }
             }
@@ -240,6 +249,7 @@ fun HomeContent(
     onRefresh: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     onNavigateToRainPrediction: (() -> Unit)? = null,
+    onNavigateToUpazila: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -362,6 +372,65 @@ fun HomeContent(
                 prediction = predictionData,
                 onViewFullPrediction = onNavigateToRainPrediction
             )
+        }
+
+        // 5.2 Upazila BBS Forecast Fast Navigation Card
+        if (onNavigateToUpazila != null) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToUpazila() }
+                        .testTag("upazila_forecast_banner"),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0x330288D1))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color(0x3381D4FA), RoundedCornerShape(12.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = Color(0xFF81D4FA),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "উপজেলা ভিত্তিক সুনির্দিষ্ট পূর্বাভাস",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "BMDWRF ও ECMWF ৪-দিনের ৩-ঘণ্টাভিত্তিক ধাপসমূহ দেখুন",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = Color(0xFF81D4FA)
+                        )
+                    }
+                }
+            }
         }
 
         // 6. Air Quality (AQI, PM2.5, PM10, etc.)

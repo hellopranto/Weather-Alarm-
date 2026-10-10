@@ -42,6 +42,7 @@ fun AppNavigation(
     stationsViewModel: BmdStationsViewModel,
     settingsViewModel: SettingsViewModel,
     rainViewModel: RainPredictionViewModel,
+    upazilaViewModel: com.example.ui.forecast.UpazilaForecastViewModel,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -51,6 +52,7 @@ fun AppNavigation(
     val screens = listOf(
         Screen.Home,
         Screen.Hourly,
+        Screen.Upazila,
         Screen.Radar,
         Screen.Stations,
         Screen.Alerts,
@@ -107,7 +109,8 @@ fun AppNavigation(
                 HomeScreen(
                     viewModel = homeViewModel,
                     onNavigateToAlerts = { navController.navigate(Screen.Alerts.route) },
-                    onNavigateToRainPrediction = { navController.navigate(Screen.Rain.route) }
+                    onNavigateToRainPrediction = { navController.navigate(Screen.Rain.route) },
+                    onNavigateToUpazila = { navController.navigate(Screen.Upazila.route) }
                 )
             }
             composable(Screen.Rain.route) {
@@ -118,6 +121,9 @@ fun AppNavigation(
             }
             composable(Screen.Hourly.route) {
                 HourlyScreen(viewModel = hourlyViewModel)
+            }
+            composable(Screen.Upazila.route) {
+                com.example.ui.forecast.UpazilaForecastScreen(viewModel = upazilaViewModel)
             }
             composable(Screen.Radar.route) {
                 RadarScreen(viewModel = radarViewModel)

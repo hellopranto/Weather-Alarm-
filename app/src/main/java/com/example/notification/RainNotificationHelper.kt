@@ -109,4 +109,49 @@ object RainNotificationHelper {
             .putString(KEY_LAST_ALERT_TYPE, currentAlertType)
             .apply()
     }
+
+    fun checkAndNotifyUpazilaForecast(
+        context: Context,
+        forecast: com.example.data.model.UpazilaUiForecast,
+        notificationsEnabled: Boolean
+    ) {
+        if (!notificationsEnabled || forecast.alerts.isEmpty()) return
+
+        val severeAlert = forecast.alerts.firstOrNull { it.isSevere } ?: return
+        createNotificationChannel(context)
+
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastAlertTime = prefs.getLong("last_upazila_alert_time", 0L)
+        val now = System.currentTimeMillis()
+
+        if (now - lastAlertTime < COOLDOWN_MILLIS) return
+
+        val title = "⚠️ ${forecast.upazilaName} — ${severeAlert.titleBn}"
+        val message = severeAlert.descriptionBn
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            2002,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(2002, notification)
+
+        prefs.edit().putLong("last_upazila_alert_time", now).apply()
+    }
 }
