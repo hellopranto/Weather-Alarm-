@@ -39,6 +39,16 @@ export interface UpazilaForecastApiResponse {
   data: Record<string, UpazilaForecastPayload>;
 }
 
+// Direct JSON import bundled at build-time
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+let bundledUpazilas: UpazilaRecord[] = [];
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  bundledUpazilas = require('../data/upazilas_bbs.json');
+} catch {
+  // Will fallback to filesystem search
+}
+
 export class UpazilaForecastService {
   private upazilas: UpazilaRecord[] = [];
   private cache = new Map<string, { timestamp: number; data: any }>();
@@ -50,11 +60,27 @@ export class UpazilaForecastService {
   }
 
   private loadUpazilas() {
+    if (Array.isArray(bundledUpazilas) && bundledUpazilas.length > 0) {
+      this.upazilas = bundledUpazilas;
+      return;
+    }
+
     try {
-      const filePath = path.join(__dirname, '../data/upazilas_bbs.json');
-      if (fs.existsSync(filePath)) {
-        const raw = fs.readFileSync(filePath, 'utf-8');
-        this.upazilas = JSON.parse(raw);
+      const candidates = [
+        path.join(__dirname, '../data/upazilas_bbs.json'),
+        path.join(__dirname, './data/upazilas_bbs.json'),
+        path.join(process.cwd(), 'src/data/upazilas_bbs.json'),
+        path.join(process.cwd(), 'backend/src/data/upazilas_bbs.json'),
+        path.join(process.cwd(), 'dist/data/upazilas_bbs.json'),
+        path.join(process.cwd(), 'data/upazilas_bbs.json')
+      ];
+
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          const raw = fs.readFileSync(p, 'utf-8');
+          this.upazilas = JSON.parse(raw);
+          return;
+        }
       }
     } catch (e) {
       console.error('Failed to load upazilas_bbs.json', e);
